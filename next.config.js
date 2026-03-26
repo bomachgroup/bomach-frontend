@@ -7,6 +7,14 @@ const nextConfig = {
         hostname: 'res.cloudinary.com',
       },
       {
+        protocol: 'https',
+        hostname: 'd1yzddjh14f4tu.cloudfront.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'backend.bomachgroup.com',
+      },
+      {
         protocol: 'http',
         hostname: 'backend',
       },

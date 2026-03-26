@@ -100,12 +100,18 @@ async function fetchAPI<T>(
   endpoint: string,
   options?: RequestInit,
 ): Promise<T> {
+  const method = options?.method?.toUpperCase() || "GET";
+  const headers: Record<string, string> = {
+    ...(options?.headers as Record<string, string>),
+  };
+  // Only set Content-Type for requests with a body
+  if (method !== "GET" && method !== "HEAD") {
+    headers["Content-Type"] = headers["Content-Type"] || "application/json";
+  }
+
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!res.ok) {
@@ -152,16 +158,21 @@ export async function getSubServices(serviceId: number): Promise<SubService[]> {
 // ── Projects ──
 
 export async function getProjects(page = 1, size = 100): Promise<Project[]> {
-  const data = await fetchAPI<{
-    items: Project[];
-    total: number;
-    page: number;
-    size: number;
-    pages: number;
-    has_next: boolean;
-    has_previous: boolean;
-  }>(`/properties/projects/?page=${page}&size=${size}`);
-  return data.items;
+  try {
+    const data = await fetchAPI<{
+      items: Project[];
+      total: number;
+      page: number;
+      size: number;
+      pages: number;
+      has_next: boolean;
+      has_previous: boolean;
+    }>(`/properties/projects/?page=${page}&size=${size}`);
+    return data.items;
+  } catch (err) {
+    console.warn("getProjects error:", err);
+    throw err;
+  }
 }
 
 export async function getProjectById(id: number): Promise<Project> {
@@ -188,16 +199,21 @@ export async function getProjectBySlug(slug: string): Promise<ProjectDetail> {
 // ── Blogs ──
 
 export async function getBlogs(page = 1, size = 100): Promise<Blog[]> {
-  const data = await fetchAPI<{
-    items: Blog[];
-    total: number;
-    page: number;
-    size: number;
-    pages: number;
-    has_next: boolean;
-    has_previous: boolean;
-  }>(`/properties/blogs/?page=${page}&size=${size}`);
-  return data.items;
+  try {
+    const data = await fetchAPI<{
+      items: Blog[];
+      total: number;
+      page: number;
+      size: number;
+      pages: number;
+      has_next: boolean;
+      has_previous: boolean;
+    }>(`/properties/blogs/?page=${page}&size=${size}`);
+    return data.items;
+  } catch (err) {
+    console.warn("getBlogs error:", err);
+    throw err;
+  }
 }
 
 export async function getBlogById(id: number): Promise<Blog> {
