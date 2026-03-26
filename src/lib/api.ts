@@ -34,11 +34,24 @@ import {
   products as staticProducts,
 } from "./data";
 
-// Server-side uses the full backend URL; client-side uses the Next.js rewrite proxy to avoid CORS
+// Server-side uses the full backend URL; client-side uses the Next.js API route proxy to avoid CORS
 const isServer = typeof window === "undefined";
 const API_URL = isServer
   ? (process.env.NEXT_PUBLIC_API_URL || "https://backend.bomachgroup.com/api")
   : "/api";
+
+/**
+ * Build a URL that works on both server and client.
+ * On client, strips trailing slashes to avoid Next.js 308 redirect loops.
+ */
+function buildUrl(endpoint: string): string {
+  let url = `${API_URL}${endpoint}`;
+  if (!isServer) {
+    // Remove trailing slash before query string or end of URL
+    url = url.replace(/\/(\?|$)/, '$1');
+  }
+  return url;
+}
 
 /**
  * Extract a readable error message from various error response formats
@@ -109,7 +122,9 @@ async function fetchAPI<T>(
     headers["Content-Type"] = headers["Content-Type"] || "application/json";
   }
 
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const url = buildUrl(endpoint);
+
+  const res = await fetch(url, {
     ...options,
     headers,
   });
@@ -435,7 +450,7 @@ export async function getProperties(
     if (options?.is_featured !== undefined)
       params.set("is_featured", String(options.is_featured));
     if (options?.sort_by) params.set("sort_by", options.sort_by);
-    const res = await fetch(`${API_URL}/properties/all/?${params.toString()}`);
+    const res = await fetch(buildUrl(`/properties/all/?${params.toString()}`));
     if (!res.ok) throw new Error("API unavailable");
     return res.json();
   } catch {
@@ -456,7 +471,7 @@ export async function getFeaturedProperties(
 ): Promise<Property[]> {
   try {
     const params = limit ? `?limit=${limit}` : "";
-    const res = await fetch(`${API_URL}/properties/featured/${params}`);
+    const res = await fetch(buildUrl(`/properties/featured/${params}`));
     if (!res.ok) throw new Error("API unavailable");
     return res.json();
   } catch {
@@ -473,7 +488,7 @@ export const getPropertyBySlug = getPropertyById;
 
 export async function getPropertyCities(): Promise<string[]> {
   try {
-    const res = await fetch(`${API_URL}/properties/cities/`);
+    const res = await fetch(buildUrl(`/properties/cities/`));
     if (!res.ok) throw new Error("API unavailable");
     return res.json();
   } catch {
@@ -489,7 +504,7 @@ export async function getJobs(query?: string, page?: number): Promise<Job[]> {
     if (query) params.set("search", query);
     if (page) params.set("page", String(page));
 
-    const res = await fetch(`${API_URL}/properties/jobs/?${params.toString()}`);
+    const res = await fetch(buildUrl(`/properties/jobs/?${params.toString()}`));
     if (!res.ok) throw new Error("Jobs API unavailable");
 
     const data = await res.json();
@@ -530,10 +545,10 @@ export async function getJobBySlug(slug: string): Promise<JobDetail> {
     let res: Response;
 
     if (!Number.isNaN(id)) {
-      res = await fetch(`${API_URL}/properties/jobs/${id}/`);
+      res = await fetch(buildUrl(`/properties/jobs/${id}/`));
     } else {
       // Try slug-based lookup
-      res = await fetch(`${API_URL}/properties/jobs/?slug=${slug}`);
+      res = await fetch(buildUrl(`/properties/jobs/?slug=${slug}`));
       if (res.ok) {
         const data = await res.json();
         const results = data.results || data;
@@ -596,7 +611,7 @@ export async function getJobBySlug(slug: string): Promise<JobDetail> {
 
 export async function getJobById(id: number): Promise<Job> {
   try {
-    const res = await fetch(`${API_URL}/properties/jobs/${id}/`);
+    const res = await fetch(buildUrl(`/properties/jobs/${id}/`));
     if (!res.ok) throw new Error("Job not found");
 
     const job = await res.json();
@@ -646,7 +661,7 @@ export async function createJob(
 ): Promise<any> {
   if (!accessToken) throw new Error("Authentication token required");
 
-  const res = await fetch(`${API_URL}/properties/jobs/`, {
+  const res = await fetch(buildUrl(`/properties/jobs/`), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -681,7 +696,7 @@ export async function updateJob(
 ): Promise<any> {
   if (!accessToken) throw new Error("Authentication token required");
 
-  const res = await fetch(`${API_URL}/properties/jobs/${jobId}/`, {
+  const res = await fetch(buildUrl(`/properties/jobs/${jobId}/`), {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -704,7 +719,7 @@ export async function deleteJob(
 ): Promise<{ detail: string }> {
   if (!accessToken) throw new Error("Authentication token required");
 
-  const res = await fetch(`${API_URL}/properties/jobs/${jobId}/`, {
+  const res = await fetch(buildUrl(`/properties/jobs/${jobId}/`), {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -780,7 +795,7 @@ export async function getNewsletterEmails(
 export async function submitJobApplication(
   formData: FormData,
 ): Promise<{ message: string }> {
-  const res = await fetch(`${API_URL}/job-application/`, {
+  const res = await fetch(buildUrl(`/job-application/`), {
     method: "POST",
     body: formData,
   });
@@ -811,7 +826,7 @@ export async function getProductBySlug(
 
 export async function getPropertyCategories(): Promise<string[]> {
   try {
-    const res = await fetch(`${API_URL}/properties/categories/`);
+    const res = await fetch(buildUrl(`/properties/categories/`));
     if (!res.ok) throw new Error("API unavailable");
     return res.json();
   } catch {
@@ -825,7 +840,7 @@ export async function uploadFile(
 ): Promise<FileUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(`${API_URL}/properties/upload-file`, {
+  const res = await fetch(buildUrl(`/properties/upload-file`), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -845,7 +860,7 @@ export async function uploadFilesAsync(
 ): Promise<FileUploadResponse[]> {
   const formData = new FormData();
   files.forEach((f) => formData.append("files", f));
-  const res = await fetch(`${API_URL}/properties/upload-files-async`, {
+  const res = await fetch(buildUrl(`/properties/upload-files-async`), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
