@@ -72,13 +72,14 @@ export default function HomeHeader() {
         transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
         {/* Main Navigation Bar */}
-        <div
-          className={`transition-all duration-500 ${isTransparent
-              ? "bg-transparent"
-              : "bg-white/90 backdrop-blur-xl shadow-lg"
+        <div className="relative">
+          {/* Glass background layer - always present, fades in/out via opacity */}
+          <div
+            className={`absolute inset-0 bg-white/90 backdrop-blur-xl shadow-lg transition-opacity duration-500 ${
+              isTransparent ? "opacity-0" : "opacity-100"
             }`}
-        >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          />
+          <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-20 lg:h-24">
               {/* Logo */}
               <Link href="/" className="flex-shrink-0">
