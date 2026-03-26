@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  skipTrailingSlashRedirect: true,
   images: {
     remotePatterns: [
       {
@@ -25,15 +24,6 @@ const nextConfig = {
       },
     ],
     unoptimized: true,
-  },
-  async rewrites() {
-    const backendUrl = process.env.BACKEND_INTERNAL_URL || 'https://backend.bomachgroup.com';
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ];
   },
 };
 
