@@ -29,14 +29,8 @@ import {
   services as staticServices,
   serviceDetails,
   subServices,
-  projects as staticProjects,
-  projectDetails,
-  blogs as staticBlogs,
-  blogDetails,
   employees,
   aboutData,
-  jobs as staticJobs,
-  jobDetails,
   products as staticProducts,
 } from "./data";
 
@@ -125,19 +119,17 @@ async function fetchAPI<T>(
 // ── Homepage ──
 
 export async function getHomepageData(): Promise<HomepageData> {
-  // Fetch dynamic data from API, fall back to static for things without endpoints
-  const [projects, blogs, jobs] = await Promise.all([
-    getProjects(1, 100).catch(() => staticProjects),
-    getBlogs(1, 100).catch(() => staticBlogs),
-    getJobs().catch(() => staticJobs),
+  // Fetch dynamic data from API; static data only for things without backend endpoints
+  const [projects, blogs] = await Promise.all([
+    getProjects(1, 100).catch(() => []),
+    getBlogs(1, 100).catch(() => []),
   ]);
 
   return {
     ...homepageData,
     projects,
     blogs,
-    // Update counts with live data
-    project_count: projects.length > 0 ? projects.length : homepageData.project_count,
+    project_count: projects.length || homepageData.project_count,
   };
 }
 
@@ -160,21 +152,16 @@ export async function getSubServices(serviceId: number): Promise<SubService[]> {
 // ── Projects ──
 
 export async function getProjects(page = 1, size = 100): Promise<Project[]> {
-  try {
-    const data = await fetchAPI<{
-      items: Project[];
-      total: number;
-      page: number;
-      size: number;
-      pages: number;
-      has_next: boolean;
-      has_previous: boolean;
-    }>(`/properties/projects/?page=${page}&size=${size}`);
-    return data.items;
-  } catch (err) {
-    console.warn("getProjects fallback to staticProjects", err);
-    return staticProjects;
-  }
+  const data = await fetchAPI<{
+    items: Project[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+  }>(`/properties/projects/?page=${page}&size=${size}`);
+  return data.items;
 }
 
 export async function getProjectById(id: number): Promise<Project> {
@@ -188,41 +175,29 @@ export async function getProjectById(id: number): Promise<Project> {
 }
 
 export async function getProjectBySlug(slug: string): Promise<ProjectDetail> {
-  try {
-    const projects = await getProjects(1, 100);
-    const project = projects.find((p) => p.slug === slug);
-    if (!project) throw new Error("Project not found");
+  const projects = await getProjects(1, 100);
+  const project = projects.find((p) => p.slug === slug);
+  if (!project) throw new Error("Project not found");
 
-    return {
-      ...project,
-      content: project.content || "",
-    };
-  } catch (err) {
-    console.warn("getProjectBySlug error, falling back to static", err);
-    const detail = projectDetails[slug];
-    if (!detail) throw new Error("Project not found");
-    return detail;
-  }
+  return {
+    ...project,
+    content: project.content || "",
+  };
 }
 
 // ── Blogs ──
 
 export async function getBlogs(page = 1, size = 100): Promise<Blog[]> {
-  try {
-    const data = await fetchAPI<{
-      items: Blog[];
-      total: number;
-      page: number;
-      size: number;
-      pages: number;
-      has_next: boolean;
-      has_previous: boolean;
-    }>(`/properties/blogs/?page=${page}&size=${size}`);
-    return data.items;
-  } catch (err) {
-    console.warn("getBlogs fallback to staticBlogs", err);
-    return staticBlogs;
-  }
+  const data = await fetchAPI<{
+    items: Blog[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+  }>(`/properties/blogs/?page=${page}&size=${size}`);
+  return data.items;
 }
 
 export async function getBlogById(id: number): Promise<Blog> {
@@ -236,29 +211,22 @@ export async function getBlogById(id: number): Promise<Blog> {
 }
 
 export async function getBlogBySlug(slug: string): Promise<BlogDetail> {
+  // Try fetching the individual blog by slug from API first
   try {
-    // Try fetching the individual blog by slug from API first
-    try {
-      const blog = await fetchAPI<BlogDetail>(`/properties/blogs/by-slug/${slug}/`);
-      return blog;
-    } catch {
-      // Endpoint may not exist, fall back to list search
-    }
-
-    const blogs = await getBlogs(1, 100);
-    const blog = blogs.find((b) => b.slug === slug);
-    if (!blog) throw new Error("Blog not found");
-
-    return {
-      ...blog,
-      content: blog.content || blog.short_content || "",
-    };
-  } catch (err) {
-    console.warn("getBlogBySlug error, falling back to static", err);
-    const detail = blogDetails[slug];
-    if (!detail) throw new Error("Blog not found");
-    return detail;
+    const blog = await fetchAPI<BlogDetail>(`/properties/blogs/by-slug/${slug}/`);
+    return blog;
+  } catch {
+    // Endpoint may not exist, fall back to list search
   }
+
+  const blogs = await getBlogs(1, 100);
+  const blog = blogs.find((b) => b.slug === slug);
+  if (!blog) throw new Error("Blog not found");
+
+  return {
+    ...blog,
+    content: blog.content || blog.short_content || "",
+  };
 }
 
 // ── Project CRUD Operations ──
@@ -534,8 +502,8 @@ export async function getJobs(query?: string, page?: number): Promise<Job[]> {
       company: job.company || "",
     }));
   } catch (err) {
-    console.warn("getJobs fallback to static jobs", err);
-    return staticJobs;
+    console.warn("getJobs error", err);
+    return [];
   }
 }
 
@@ -605,10 +573,8 @@ export async function getJobBySlug(slug: string): Promise<JobDetail> {
       benefits: "",
     };
   } catch (err) {
-    console.warn("getJobBySlug fallback to static job", err);
-    const detail = jobDetails[slug];
-    if (!detail) throw new Error("Job not found");
-    return detail;
+    console.warn("getJobBySlug error", err);
+    throw new Error("Job not found");
   }
 }
 
