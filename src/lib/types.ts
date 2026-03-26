@@ -32,6 +32,7 @@ export interface Project {
   slug: string;
   image_url: string;
   sub_service_name: string | null;
+  content?: string;
   priority: number;
   date: string;
 }
@@ -60,6 +61,7 @@ export interface Blog {
   author: string;
   image_url: string;
   short_content: string;
+  content?: string;
   priority: number;
   date: string;
 }

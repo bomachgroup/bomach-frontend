@@ -176,17 +176,12 @@ export async function getProjectBySlug(slug: string): Promise<ProjectDetail> {
     const project = projects.find((p) => p.slug === slug);
     if (!project) throw new Error("Project not found");
 
-    const detail = projectDetails[slug];
-    if (detail) {
-      return detail;
-    }
-
     return {
       ...project,
-      content: "",
+      content: project.content || "",
     };
   } catch (err) {
-    console.warn("getProjectBySlug error", err);
+    console.warn("getProjectBySlug error, falling back to static", err);
     const detail = projectDetails[slug];
     if (!detail) throw new Error("Project not found");
     return detail;
@@ -225,21 +220,24 @@ export async function getBlogById(id: number): Promise<Blog> {
 
 export async function getBlogBySlug(slug: string): Promise<BlogDetail> {
   try {
+    // Try fetching the individual blog by slug from API first
+    try {
+      const blog = await fetchAPI<BlogDetail>(`/properties/blogs/by-slug/${slug}/`);
+      return blog;
+    } catch {
+      // Endpoint may not exist, fall back to list search
+    }
+
     const blogs = await getBlogs(1, 500);
     const blog = blogs.find((b) => b.slug === slug);
     if (!blog) throw new Error("Blog not found");
 
-    const detail = blogDetails[slug];
-    if (detail) {
-      return detail;
-    }
-
     return {
       ...blog,
-      content: blog.short_content || "",
+      content: blog.content || blog.short_content || "",
     };
   } catch (err) {
-    console.warn("getBlogBySlug error", err);
+    console.warn("getBlogBySlug error, falling back to static", err);
     const detail = blogDetails[slug];
     if (!detail) throw new Error("Blog not found");
     return detail;
