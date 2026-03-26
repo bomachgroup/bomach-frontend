@@ -40,7 +40,11 @@ import {
   products as staticProducts,
 } from "./data";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend.bomachgroup.com/api";
+// Server-side uses the full backend URL; client-side uses the Next.js rewrite proxy to avoid CORS
+const isServer = typeof window === "undefined";
+const API_URL = isServer
+  ? (process.env.NEXT_PUBLIC_API_URL || "https://backend.bomachgroup.com/api")
+  : "/api";
 
 /**
  * Extract a readable error message from various error response formats
@@ -185,7 +189,7 @@ export async function getProjectById(id: number): Promise<Project> {
 
 export async function getProjectBySlug(slug: string): Promise<ProjectDetail> {
   try {
-    const projects = await getProjects(1, 500);
+    const projects = await getProjects(1, 100);
     const project = projects.find((p) => p.slug === slug);
     if (!project) throw new Error("Project not found");
 
@@ -241,7 +245,7 @@ export async function getBlogBySlug(slug: string): Promise<BlogDetail> {
       // Endpoint may not exist, fall back to list search
     }
 
-    const blogs = await getBlogs(1, 500);
+    const blogs = await getBlogs(1, 100);
     const blog = blogs.find((b) => b.slug === slug);
     if (!blog) throw new Error("Blog not found");
 

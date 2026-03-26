@@ -15,6 +15,31 @@ export default function AdminJobCreatePage() {
   >("idle");
   const [error, setError] = useState<string>("");
 
+  const [salaryFrom, setSalaryFrom] = useState("");
+  const [salaryTo, setSalaryTo] = useState("");
+  const [salaryError, setSalaryError] = useState("");
+
+  function validateSalary(): boolean {
+    setSalaryError("");
+    if (salaryFrom && salaryTo) {
+      if (Number(salaryFrom) >= Number(salaryTo)) {
+        setSalaryError("'From' must be less than 'To'");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function formatSalaryRange(): string | null {
+    if (!salaryFrom && !salaryTo) return null;
+    const from = salaryFrom ? Number(salaryFrom).toLocaleString() : "0";
+    const to = salaryTo ? Number(salaryTo).toLocaleString() : "";
+    if (salaryFrom && salaryTo) return `₦${from} - ₦${to}`;
+    if (salaryFrom) return `From ₦${from}`;
+    if (salaryTo) return `Up to ₦${to}`;
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!accessToken) {
@@ -22,6 +47,8 @@ export default function AdminJobCreatePage() {
       setStatus("error");
       return;
     }
+
+    if (!validateSalary()) return;
 
     setStatus("loading");
     setError("");
@@ -37,7 +64,7 @@ export default function AdminJobCreatePage() {
       is_remote: formData.get("is_remote") === "on",
       job_type: (formData.get("job_type") as string) || "full_time",
       experience_level: (formData.get("experience_level") as string) || "entry",
-      salary_range: (formData.get("salary_range") as string) || null,
+      salary_range: formatSalaryRange(),
       requirements: ((formData.get("requirements") as string) || "")
         .split("\n")
         .map((item) => item.trim())
@@ -131,13 +158,32 @@ export default function AdminJobCreatePage() {
               />
             </div>
             <div>
-              <label className={labelClasses}>Salary Range</label>
-              <input
-                name='salary_range'
-                type='text'
-                className={inputClasses}
-                placeholder='e.g. 400k-600k'
-              />
+              <label className={labelClasses}>Salary Range (₦)</label>
+              <div className='grid grid-cols-2 gap-3'>
+                <div>
+                  <input
+                    type='number'
+                    min='0'
+                    value={salaryFrom}
+                    onChange={(e) => { setSalaryFrom(e.target.value); setSalaryError(""); }}
+                    className={inputClasses}
+                    placeholder='From'
+                  />
+                </div>
+                <div>
+                  <input
+                    type='number'
+                    min='0'
+                    value={salaryTo}
+                    onChange={(e) => { setSalaryTo(e.target.value); setSalaryError(""); }}
+                    className={inputClasses}
+                    placeholder='To'
+                  />
+                </div>
+              </div>
+              {salaryError && (
+                <p className='text-red-500 text-xs mt-1'>{salaryError}</p>
+              )}
             </div>
           </div>
 
