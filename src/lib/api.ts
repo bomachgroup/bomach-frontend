@@ -40,7 +40,7 @@ import {
   products as staticProducts,
 } from "./data";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend.bomachgroup.com/api";
 
 /**
  * Extract a readable error message from various error response formats

@@ -17,14 +17,12 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
-  // Proxy /media/ requests to Django backend
   async rewrites() {
-    // In Docker, backend is reachable via service name
-    const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://backend:8000';
+    const backendUrl = process.env.BACKEND_INTERNAL_URL || 'https://backend.bomachgroup.com';
     return [
       {
         source: "/api/:path*",
-        destination: "http://127.0.0.1:8000/api/:path*",
+        destination: `${backendUrl}/api/:path*`,
       },
     ];
   },
