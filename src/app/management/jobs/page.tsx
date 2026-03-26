@@ -109,11 +109,13 @@ export default function AdminJobsPage() {
                   </p>
                 </div>
                 <div className='flex items-center gap-2'>
-                  <Link
-                    href={`/jobs/${job.id}`}
+                  <a
+                    href={`/jobs/${job.slug || job.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className='inline-flex items-center gap-1 text-primary-600 text-sm font-medium hover:underline'>
                     <ExternalLink className='w-4 h-4' /> View
-                  </Link>
+                  </a>
                   <Link
                     href={`/management/jobs/${job.id}/edit`}
                     className='inline-flex items-center gap-1 text-secondary-700 text-sm font-medium hover:text-primary-600'>

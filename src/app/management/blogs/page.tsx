@@ -107,11 +107,13 @@ export default function AdminBlogsPage() {
                   <p className='text-secondary-600 text-sm'>by {blog.author}</p>
                 </div>
                 <div className='flex gap-2'>
-                  <Link
+                  <a
                     href={`/blog/${blog.slug}`}
-                    className='text-primary-600 text-sm hover:underline'>
-                    View
-                  </Link>
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className='inline-flex items-center gap-1 text-primary-600 text-sm hover:underline'>
+                    <ExternalLink className='w-3.5 h-3.5' /> View
+                  </a>
                   <Link
                     href={`/management/blogs/${blog.id}/edit`}
                     className='text-secondary-700 text-sm hover:text-primary-600'>

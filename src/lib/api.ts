@@ -526,10 +526,24 @@ export async function getJobs(query?: string, page?: number): Promise<Job[]> {
 
 export async function getJobBySlug(slug: string): Promise<JobDetail> {
   try {
+    // Try by ID first, then by slug query
     const id = Number(slug);
-    if (Number.isNaN(id)) throw new Error("Invalid job ID");
+    let res: Response;
 
-    const res = await fetch(`${API_URL}/properties/jobs/${id}/`);
+    if (!Number.isNaN(id)) {
+      res = await fetch(`${API_URL}/properties/jobs/${id}/`);
+    } else {
+      // Try slug-based lookup
+      res = await fetch(`${API_URL}/properties/jobs/?slug=${slug}`);
+      if (res.ok) {
+        const data = await res.json();
+        const results = data.results || data;
+        const job = Array.isArray(results) ? results[0] : results;
+        if (!job) throw new Error("Job not found");
+        res = new Response(JSON.stringify(job), { status: 200 });
+      }
+    }
+
     if (!res.ok) throw new Error("Job details not available");
 
     const job = await res.json();
