@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getHomepageData, sanitizeImageUrl } from "@/lib/api";
-import HomeHeader from "@/components/HomeHeader";
 import QuoteForm from "@/components/QuoteForm";
 import HeroSlider from "@/components/home/HeroSlider";
 import HomeProjectsSlider from "@/components/home/HomeProjectsSlider";
@@ -52,9 +51,6 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Transparent Header */}
-      <HomeHeader />
-
       {/* ─── 1. Hero Slider ─── */}
       <HeroSlider sliders={data.sliders} />
 
