@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply text-secondary-900 antialiased bg-white font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-black tracking-tight uppercase;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+
+  .glass-dark {
+    @apply bg-secondary-950/40 backdrop-blur-lg border border-white/10 shadow-2xl;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center bg-primary-600 text-white px-8 py-4 rounded-2xl font-bold
+           hover:bg-primary-700 hover:shadow-lg hover:shadow-primary-600/20
+           active:scale-95 transition-all duration-300;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center bg-secondary-900 text-white px-8 py-4 rounded-2xl font-bold
+           hover:bg-black hover:shadow-lg hover:shadow-black/20
+           active:scale-95 transition-all duration-300;
+  }
+
+  .btn-glass {
+    @apply inline-flex items-center justify-center bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-2xl font-bold
+           hover:bg-white/20 transition-all duration-300;
+  }
+
+  .section-title {
+    @apply text-4xl md:text-5xl lg:text-6xl font-display font-black text-secondary-950 leading-[1.1] mb-6;
+  }
+
+  .section-subtitle {
+    @apply text-primary-600 font-bold uppercase tracking-[0.2em] text-xs mb-4 block;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto px-6 lg:px-8;
+  }
+
+  .card-premium {
+    @apply bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden;
+  }
+
+  .card-premium-hover {
+    @apply card-premium hover:-translate-y-2;
+  }
+
+  .glass-card-hover {
+    @apply glass-card hover:-translate-y-1 hover:shadow-2xl transition-all duration-500;
+  }
+
+  .gradient-overlay {
+    @apply absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70;
+  }
+
+  .premium-section {
+    @apply py-24 lg:py-32;
+  }
+
+  .section-divider {
+    @apply w-16 h-1 bg-primary-600 rounded-full;
+  }
+
+  .input-premium {
+    @apply w-full px-5 py-4 rounded-2xl bg-secondary-50/50 text-secondary-950 border border-secondary-100
+           focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 focus:outline-none
+           transition-all duration-300 placeholder:text-secondary-400 font-medium;
+  }
+
+  .select-premium {
+    @apply input-premium appearance-none cursor-pointer;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-accent-500;
+  }
+
+  /* Rich HTML content */
+  .rich-content h1 { @apply text-3xl font-display font-bold mb-6 text-secondary-950; }
+  .rich-content h2 { @apply text-2xl font-display font-bold mb-5 text-secondary-900; }
+  .rich-content p { @apply mb-6 leading-relaxed text-secondary-700 text-lg; }
+  .rich-content ul { @apply list-disc pl-6 mb-4; }
+  .rich-content ol { @apply list-decimal pl-6 mb-4; }
+  .rich-content li { @apply mb-1; }
+  .rich-content a { @apply text-primary underline hover:text-primary-dark; }
+  .rich-content strong { @apply font-bold; }
+  .rich-content em { @apply italic; }
+  .rich-content img { @apply rounded-xl my-8 w-full shadow-md; }
+  .rich-content figure { @apply my-8; }
+  .rich-content figcaption { @apply text-sm text-secondary-500 text-center mt-3 italic; }
+  .rich-content blockquote { @apply border-l-4 border-primary-500 pl-5 my-6 italic text-secondary-600; }
+}
+
+/* Property gallery swiper overrides */
+.property-gallery-swiper .swiper-button-next,
+.property-gallery-swiper .swiper-button-prev {
+  display: none !important;
+}
+
+.property-gallery-swiper .swiper-pagination-bullet {
+  @apply bg-white/50 w-8 h-1 rounded-full opacity-100 transition-all !important;
+}
+
+.property-gallery-swiper .swiper-pagination-bullet-active {
+  @apply bg-white w-12 !important;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
