@@ -121,7 +121,20 @@ async function fetchAPI<T>(
 // ── Homepage ──
 
 export async function getHomepageData(): Promise<HomepageData> {
-  return homepageData;
+  // Fetch dynamic data from API, fall back to static for things without endpoints
+  const [projects, blogs, jobs] = await Promise.all([
+    getProjects(1, 100).catch(() => staticProjects),
+    getBlogs(1, 100).catch(() => staticBlogs),
+    getJobs().catch(() => staticJobs),
+  ]);
+
+  return {
+    ...homepageData,
+    projects,
+    blogs,
+    // Update counts with live data
+    project_count: projects.length > 0 ? projects.length : homepageData.project_count,
+  };
 }
 
 // ── Services ──
