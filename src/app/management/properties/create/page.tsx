@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { uploadFile, submitProperty } from "@/lib/api";
+import { uploadFile, uploadFilesAsync, submitProperty } from "@/lib/api";
 import {
   PROPERTY_CATEGORIES,
   NIGERIAN_STATES,
@@ -115,9 +115,7 @@ export default function AdminPropertyCreatePage() {
       let imageUrls: string[] = [];
       if (images.length > 0) {
         setLoadingStatus(`Uploading ${images.length} image${images.length > 1 ? "s" : ""}...`);
-        const results = await Promise.all(
-          images.map((img) => uploadFile(img, accessToken)),
-        );
+        const results = await uploadFilesAsync(images, accessToken);
         imageUrls = results.map((r) => r.url);
       }
 
@@ -125,9 +123,7 @@ export default function AdminPropertyCreatePage() {
       let videoUrls: string[] = [];
       if (videoFiles.length > 0) {
         setLoadingStatus(`Uploading ${videoFiles.length} video${videoFiles.length > 1 ? "s" : ""}...`);
-        const results = await Promise.all(
-          videoFiles.map((vid) => uploadFile(vid, accessToken)),
-        );
+        const results = await uploadFilesAsync(videoFiles, accessToken);
         videoUrls = results.map((r) => r.url);
       }
 
