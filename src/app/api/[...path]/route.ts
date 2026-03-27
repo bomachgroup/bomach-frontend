@@ -28,15 +28,34 @@ export async function GET(
   const { path } = await params;
   const target = buildTarget(path, request.nextUrl.search);
 
+  const range = request.headers.get("Range");
+  const headers = forwardHeaders(request);
+  if (range) {
+    headers["Range"] = range;
+  }
+
   try {
     const res = await fetch(target, {
-      headers: forwardHeaders(request),
+      headers,
     });
 
-    const data = await res.text();
-    return new NextResponse(data, {
+    const responseHeaders: Record<string, string> = {
+      "Content-Type": res.headers.get("Content-Type") || "application/json",
+    };
+
+    // Forward streaming/range headers to enable video seek/stream
+    const contentRange = res.headers.get("Content-Range");
+    if (contentRange) responseHeaders["Content-Range"] = contentRange;
+    
+    const acceptRanges = res.headers.get("Accept-Ranges");
+    if (acceptRanges) responseHeaders["Accept-Ranges"] = acceptRanges;
+    
+    const contentLength = res.headers.get("Content-Length");
+    if (contentLength) responseHeaders["Content-Length"] = contentLength;
+
+    return new NextResponse(res.body, {
       status: res.status,
-      headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
+      headers: responseHeaders,
     });
   } catch (error: any) {
     console.error(`[API Proxy GET] Error fetching ${target}:`, error);

@@ -289,18 +289,34 @@ export default function PropertyDetailPage() {
                     Virtual Tour
                   </h2>
                   {property.property_videos && property.property_videos.length > 0 ? (
-                    <div className="space-y-4">
-                      {property.property_videos.map((videoUrl, idx) => (
-                        <div key={idx} className="aspect-video rounded-xl overflow-hidden bg-black">
-                          <video
-                            src={videoUrl}
-                            className="w-full h-full"
-                            controls
-                            preload="metadata"
-                            title={`Property Video Tour ${idx + 1}`}
-                          />
-                        </div>
-                      ))}
+                    <div className="space-y-6">
+                      {property.property_videos.map((videoUrl, idx) => {
+                        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                        const match = videoUrl.match(regExp);
+                        const youtubeId = (match && match[7].length === 11) ? match[7] : null;
+
+                        return (
+                          <div key={idx} className="aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl ring-1 ring-white/10">
+                            {youtubeId ? (
+                              <iframe
+                                src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
+                                className="w-full h-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                title={`Property Video Tour ${idx + 1}`}
+                              />
+                            ) : (
+                              <video
+                                src={videoUrl}
+                                className="w-full h-full"
+                                controls
+                                preload="metadata"
+                                title={`Property Video Tour ${idx + 1}`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="bg-gradient-to-br from-secondary-900 to-secondary-950 rounded-xl py-16 text-center text-white/60">
