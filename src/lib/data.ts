@@ -468,8 +468,6 @@ export const employees: Employee[] = [
   { id: 2, name: "George Arinze", job_title: "CTO", image_url: "/images/team/cto-george.jpg", facebook: null, twitter: null, instagram: null, priority: 2 },
   { id: 3, name: "Ozioma Ogbozor", job_title: "Marketing Manager", image_url: "/images/team/marketing-ozioma.jpg", facebook: null, twitter: null, instagram: null, priority: 3 },
   { id: 4, name: "Caleb Chinedu", job_title: "Civil Engineer", image_url: "/images/team/engineer-caleb.jpg", facebook: null, twitter: null, instagram: null, priority: 4 },
-  { id: 5, name: "Gideon Chukwuoma", job_title: "Software Engineer", image_url: "/images/team/dev-gideon.jpg", facebook: null, twitter: null, instagram: null, priority: 5 },
-  { id: 6, name: "Emmanuel Nwaegunwa", job_title: "Software Engineer", image_url: "/images/team/dev-emmanuel.jpg", facebook: null, twitter: null, instagram: null, priority: 6 },
 ];
 
 // ── Partners ──
@@ -539,7 +537,7 @@ export const homepageData: HomepageData = {
   blogs,
   reviews,
   partners,
-  employees_count: 24,
+  employees_count: 22,
   project_count: 39,
   happy_customer_count: 53,
 };
@@ -547,7 +545,7 @@ export const homepageData: HomepageData = {
 export const aboutData: AboutData = {
   employees,
   partners,
-  employees_count: 24,
+  employees_count: 22,
   project_count: 39,
   happy_customer_count: 53,
 };
