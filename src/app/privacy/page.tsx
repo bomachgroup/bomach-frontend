@@ -226,9 +226,9 @@ export default function PrivacyPage() {
               <p className="font-display font-bold text-secondary-950 mb-3">Bomach Group of Company</p>
               <p className="text-secondary-600 mb-3">
                 <strong className="text-secondary-950">Address:</strong><br />
-                Suite 9 Swiss Guard Plaza<br />
-                450 Ogui Road<br />
-                Enugu, Enugu State<br />
+                3a Isiuzo Street<br />
+                Independence Layout<br />
+                Enugu State<br />
                 Nigeria
               </p>
               <p className="text-secondary-600 mb-3">
