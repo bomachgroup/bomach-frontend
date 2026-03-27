@@ -4,21 +4,19 @@ const BACKEND_URL =
   process.env.BACKEND_INTERNAL_URL || "https://backend.bomachgroup.com";
 
 function buildTarget(path: string[], search: string): string {
-  return `${BACKEND_URL}/api/${path.join("/")}${search}`;
+  // Ensure we preserve the trailing slash if the backend requires it
+  // and the path doesn't point to a specific file with an extension
+  let targetPath = path.join("/");
+  if (targetPath && !targetPath.includes(".")) {
+    targetPath += "/";
+  }
+  return `${BACKEND_URL}/api/${targetPath}${search}`;
 }
 
 function forwardHeaders(request: NextRequest): Record<string, string> {
   const headers: Record<string, string> = {};
   const auth = request.headers.get("Authorization");
   if (auth) headers["Authorization"] = auth;
-  
-  // Forward other useful headers
-  const userAgent = request.headers.get("User-Agent");
-  if (userAgent) headers["User-Agent"] = userAgent;
-
-  const accept = request.headers.get("Accept");
-  if (accept) headers["Accept"] = accept;
-
   return headers;
 }
 
@@ -70,22 +68,13 @@ export async function POST(
   }
 
   try {
-    // Only use streaming for FormData; buffer for other types (JSON/text)
-    // to avoid issue with backend servers that don't support chunked transfer well.
-    const fetchOptions: RequestInit = {
+    const res = await fetch(target, {
       method: "POST",
       headers,
-    };
-
-    if (isFormData) {
-      // @ts-ignore - duplex is required for streaming in Node fetch
-      fetchOptions.duplex = "half";
-      fetchOptions.body = request.body;
-    } else {
-      fetchOptions.body = await request.text();
-    }
-
-    const res = await fetch(target, fetchOptions);
+      body: isFormData ? request.body : await request.text(),
+      // @ts-ignore
+      duplex: isFormData ? "half" : undefined,
+    });
 
     const data = await res.text();
     return new NextResponse(data, {
@@ -113,32 +102,20 @@ export async function PUT(
   const target = buildTarget(path, request.nextUrl.search);
 
   try {
-    // For PUT, usually it's JSON; if it's large, we might consider streaming,
-    // but buffering is safer for backend compatibility.
     const contentType = request.headers.get("Content-Type") || "";
     const isFormData = contentType.includes("multipart/form-data");
-
-    const fetchOptions: RequestInit = {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...forwardHeaders(request),
-      },
+    const headers = {
+      ...forwardHeaders(request),
+      "Content-Type": isFormData ? contentType : "application/json"
     };
 
-    if (isFormData) {
+    const res = await fetch(target, {
+      method: "PUT",
+      headers,
+      body: isFormData ? request.body : await request.text(),
       // @ts-ignore
-      fetchOptions.duplex = "half";
-      fetchOptions.body = request.body;
-      // Preserve boundary in PUT if isFormData
-      if (fetchOptions.headers) {
-        (fetchOptions.headers as any)["Content-Type"] = contentType;
-      }
-    } else {
-      fetchOptions.body = await request.text();
-    }
-
-    const res = await fetch(target, fetchOptions);
+      duplex: isFormData ? "half" : undefined,
+    });
 
     const data = await res.text();
     return new NextResponse(data, {
