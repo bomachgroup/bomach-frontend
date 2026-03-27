@@ -4,10 +4,11 @@ const BACKEND_URL =
   process.env.BACKEND_INTERNAL_URL || "https://backend.bomachgroup.com";
 
 function buildTarget(path: string[], search: string): string {
-  // Ensure we preserve the trailing slash if the backend requires it
-  // and the path doesn't point to a specific file with an extension
   let targetPath = path.join("/");
-  if (targetPath && !targetPath.includes(".")) {
+  // Only append trailing slash if it's a single segment path (likely a collection)
+  // or it already had one (though Next.js strips it, we can guess based on path length)
+  // Endpoints like 'properties/upload-file' should NOT have a trailing slash if they didn't before.
+  if (path.length === 1 && targetPath && !targetPath.includes(".")) {
     targetPath += "/";
   }
   return `${BACKEND_URL}/api/${targetPath}${search}`;
@@ -77,6 +78,11 @@ export async function POST(
     });
 
     const data = await res.text();
+    
+    if (!res.ok) {
+      console.error(`[API Proxy POST] Backend error ${res.status} for ${target}:`, data.substring(0, 500));
+    }
+
     return new NextResponse(data, {
       status: res.status,
       headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
@@ -118,6 +124,11 @@ export async function PUT(
     });
 
     const data = await res.text();
+    
+    if (!res.ok) {
+      console.error(`[API Proxy PUT] Backend error ${res.status} for ${target}:`, data.substring(0, 500));
+    }
+
     return new NextResponse(data, {
       status: res.status,
       headers: { "Content-Type": res.headers.get("Content-Type") || "application/json" },
