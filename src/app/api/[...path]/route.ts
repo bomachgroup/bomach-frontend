@@ -42,7 +42,12 @@ export async function POST(
   const contentType = request.headers.get("Content-Type") || "";
   const isFormData = contentType.includes("multipart/form-data");
   const headers = forwardHeaders(request);
-  if (!isFormData) headers["Content-Type"] = "application/json";
+  if (isFormData) {
+    // Forward the full Content-Type including the boundary
+    headers["Content-Type"] = contentType;
+  } else {
+    headers["Content-Type"] = "application/json";
+  }
 
   const res = await fetch(target, {
     method: "POST",

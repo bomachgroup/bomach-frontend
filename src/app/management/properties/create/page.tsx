@@ -33,6 +33,7 @@ export default function AdminPropertyCreatePage() {
   const { accessToken } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -113,6 +114,7 @@ export default function AdminPropertyCreatePage() {
       // Upload images
       let imageUrls: string[] = [];
       if (images.length > 0) {
+        setLoadingStatus(`Uploading ${images.length} image${images.length > 1 ? "s" : ""}...`);
         const results = await Promise.all(
           images.map((img) => uploadFile(img, accessToken)),
         );
@@ -122,12 +124,14 @@ export default function AdminPropertyCreatePage() {
       // Upload videos
       let videoUrls: string[] = [];
       if (videoFiles.length > 0) {
+        setLoadingStatus(`Uploading ${videoFiles.length} video${videoFiles.length > 1 ? "s" : ""}...`);
         const results = await Promise.all(
           videoFiles.map((vid) => uploadFile(vid, accessToken)),
         );
         videoUrls = results.map((r) => r.url);
       }
 
+      setLoadingStatus("Creating property...");
       await submitProperty(
         {
           name: formData.name,
@@ -555,7 +559,7 @@ export default function AdminPropertyCreatePage() {
             ) : (
               <Save className='w-5 h-5' />
             )}
-            {loading ? "Creating..." : "Create Property"}
+            {loading ? loadingStatus || "Creating..." : "Create Property"}
           </button>
           <Link
             href='/management/properties'
