@@ -171,8 +171,8 @@ export default function Footer() {
                   <li className="flex items-start gap-3">
                     <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
                     <span className="text-secondary-300">
-                      Suite 9 Swiss Guard Plaza, 450 Ogui Road Enugu, Enugu
-                      State, Nigeria.
+                      3a Isiuzo Street, Independence Layout, Enugu State,
+                      Nigeria.
                     </span>
                   </li>
                   <li className="flex items-start gap-3">

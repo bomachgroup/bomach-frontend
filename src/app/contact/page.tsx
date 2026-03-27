@@ -13,7 +13,7 @@ const contactInfo = [
   {
     icon: MapPin,
     title: "Address",
-    lines: ["Suite 9 Swiss Guard Plaza,", "450 Ogui Road, Enugu State"],
+    lines: ["3a Isiuzo Street,", "Independence Layout, Enugu State"],
   },
   {
     icon: Phone,
