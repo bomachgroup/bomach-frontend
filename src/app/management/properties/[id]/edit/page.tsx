@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPropertyById, updateProperty, uploadFile } from "@/lib/api";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 import {
   PROPERTY_CATEGORIES,
   NIGERIAN_STATES,
@@ -322,13 +323,12 @@ export default function AdminPropertyEditPage() {
             <label className={labelClasses}>
               Description <span className='text-secondary-300'>(optional)</span>
             </label>
-            <textarea
-              rows={5}
-              className={inputClasses}
+            <RichTextEditor
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
+              onChange={(html) =>
+                setFormData({ ...formData, description: html })
               }
+              placeholder='Describe the property features, amenities, and details...'
             />
           </div>
 
