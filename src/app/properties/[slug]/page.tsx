@@ -206,10 +206,9 @@ export default function PropertyDetailPage() {
                     <h2 className="font-display text-2xl font-bold text-secondary-900 mb-4 pb-4 border-b-2 border-secondary-100">
                       Property Description
                     </h2>
-                    <div
-                      className="rich-content prose max-w-none text-secondary-600 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: property.description }}
-                    />
+                    <div className="rich-content prose max-w-none text-secondary-600 leading-relaxed whitespace-pre-line">
+                      {property.description}
+                    </div>
                   </div>
                 </AnimatedSection>
               )}
