@@ -47,6 +47,7 @@ export default function PropertyDetailPage() {
 
   // Contact form state
   const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", message: "" });
+  const [descExpanded, setDescExpanded] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactError, setContactError] = useState("");
@@ -206,10 +207,24 @@ export default function PropertyDetailPage() {
                     <h2 className="font-display text-2xl font-bold text-secondary-900 mb-4 pb-4 border-b-2 border-secondary-100">
                       Property Description
                     </h2>
-                    <div
-                      className="rich-content prose max-w-none text-secondary-600 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: property.description }}
-                    />
+                    <div className="relative">
+                      <div
+                        className={`rich-content prose max-w-none text-secondary-600 leading-relaxed overflow-hidden transition-all duration-300 ${
+                          !descExpanded ? "max-h-[15em]" : "max-h-none"
+                        }`}
+                        dangerouslySetInnerHTML={{ __html: property.description }}
+                      />
+                      {!descExpanded && (
+                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white/90 to-transparent pointer-events-none" />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDescExpanded((v) => !v)}
+                      className="mt-3 text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+                    >
+                      {descExpanded ? "Show less" : "See more"}
+                    </button>
                   </div>
                 </AnimatedSection>
               )}
