@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getServices, getSubServices, submitBooking, checkAvailability } from "@/lib/api";
+import { useState } from "react";
+import { submitBooking } from "@/lib/api";
 import PageTitle from "@/components/PageTitle";
 import SectionHeader from "@/components/ui/SectionHeader";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import AnimatedCard from "@/components/ui/AnimatedCard";
 import { MapPin, Phone, Mail, CalendarCheck, CheckCircle2, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Service, SubService } from "@/lib/types";
 
 const contactInfo = [
   {
@@ -31,51 +30,28 @@ const contactInfo = [
 ];
 
 export default function BookingPage() {
-  const [services, setServices] = useState<Service[]>([]);
-  const [subServices, setSubServices] = useState<SubService[]>([]);
-  const [selectedService, setSelectedService] = useState("");
-  const [meetingTime, setMeetingTime] = useState("");
-  const [availability, setAvailability] = useState<{ available: boolean; message: string } | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
-  useEffect(() => {
-    getServices().then(setServices).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (selectedService) {
-      getSubServices(Number(selectedService)).then(setSubServices).catch(() => setSubServices([]));
-    } else {
-      setSubServices([]);
-    }
-  }, [selectedService]);
-
-  useEffect(() => {
-    if (meetingTime) {
-      checkAvailability(meetingTime).then(setAvailability).catch(() => {});
-    } else {
-      setAvailability(null);
-    }
-  }, [meetingTime]);
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (availability && !availability.available) return;
 
     setStatus("loading");
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    const meetingDate = formData.get("meeting_date") as string;
+    const meetingTime = formData.get("meeting_time") as string;
 
     try {
-      await submitBooking(data);
+      await submitBooking({
+        name: formData.get("name") as string,
+        phone: formData.get("phone") as string,
+        date: meetingDate,
+        time: meetingTime,
+        property_name: (formData.get("property_name") as string) || null,
+      });
       setStatus("success");
       form.reset();
-      setSelectedService("");
-      setSubServices([]);
-      setMeetingTime("");
-      setAvailability(null);
     } catch (err) {
       setStatus("error");
       setErrorMsg(err instanceof Error ? err.message : "Booking failed.");
@@ -147,15 +123,6 @@ export default function BookingPage() {
                     </div>
                     <div>
                       <input
-                        type="email"
-                        name="email"
-                        placeholder="Email Address"
-                        required
-                        className="input-premium"
-                      />
-                    </div>
-                    <div>
-                      <input
                         type="text"
                         name="phone"
                         placeholder="Phone"
@@ -164,88 +131,40 @@ export default function BookingPage() {
                       />
                     </div>
                     <div>
-                      <select name="location" required className="select-premium">
-                        <option value="Enugu Branch">Enugu Branch</option>
-                        <option value="Port Harcourt Branch">Port Harcourt Branch</option>
-                      </select>
-                    </div>
-                    <div>
-                      <select
-                        name="service"
-                        value={selectedService}
-                        onChange={(e) => setSelectedService(e.target.value)}
-                        required
-                        className="select-premium"
-                      >
-                        <option value="">Select Service</option>
-                        {services.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <select
-                        name="sub_service"
-                        disabled={!selectedService}
-                        className="select-premium disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="">Select Sub-Service</option>
-                        {subServices.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <textarea
-                        name="message"
-                        placeholder="Message"
-                        rows={5}
-                        required
-                        className="input-premium resize-none"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-secondary-700 mb-2">
-                        Preferred Meeting Time
-                      </label>
                       <input
-                        type="datetime-local"
-                        name="meeting_time"
-                        required
-                        value={meetingTime}
-                        onChange={(e) => setMeetingTime(e.target.value)}
+                        type="text"
+                        name="property_name"
+                        placeholder="Property Name (optional)"
                         className="input-premium"
                       />
-                      <AnimatePresence mode="wait">
-                        {availability && availability.available && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -5 }}
-                            className="mt-2 flex items-center gap-2 text-sm text-green-600"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>{availability.message || "Selected time slot is available!"}</span>
-                          </motion.div>
-                        )}
-                        {availability && !availability.available && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -5 }}
-                            className="mt-2 flex items-center gap-2 text-sm text-red-600"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            <span>{availability.message || "Time slot not available"}</span>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-2">
+                        Preferred Date
+                      </label>
+                      <input
+                        type="date"
+                        name="meeting_date"
+                        required
+                        className="input-premium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-2">
+                        Preferred Time
+                      </label>
+                      <input
+                        type="time"
+                        name="meeting_time"
+                        required
+                        className="input-premium"
+                      />
                     </div>
                     <div className="md:col-span-2">
                       <button
                         type="submit"
                         className="btn-primary w-full"
-                        disabled={status === "loading" || (availability !== null && !availability.available)}
+                        disabled={status === "loading"}
                       >
                         <CalendarCheck className="w-4 h-4 mr-2 inline-block" />
                         {status === "loading" ? "Booking..." : "Book Appointment"}

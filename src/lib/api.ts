@@ -18,7 +18,6 @@ import type {
   Property,
   Job,
   JobDetail,
-  AvailabilityResponse,
   Product,
   TokenResponse,
   FileUploadResponse,
@@ -752,15 +751,6 @@ export async function submitBooking(
   return fetchAPI("/properties/booking/", {
     method: "POST",
     body: JSON.stringify(data),
-  });
-}
-
-export async function checkAvailability(
-  meetingTime: string,
-): Promise<AvailabilityResponse> {
-  return fetchAPI("/properties/booking/check-availability/", {
-    method: "POST",
-    body: JSON.stringify({ meeting_time: meetingTime }),
   });
 }
 

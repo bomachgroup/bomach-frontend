@@ -150,15 +150,13 @@ export default function PropertyDetailPage() {
                       }}
                       onSwiper={(swiper) => {
                         setTimeout(() => {
-                          if (swiper && swiper.params && swiper.params.navigation && typeof swiper.params.navigation !== "boolean") {
+                          if (swiper.params.navigation && typeof swiper.params.navigation !== "boolean") {
                             swiper.params.navigation.prevEl = prevRef.current;
                             swiper.params.navigation.nextEl = nextRef.current;
                           }
-                          if (swiper && swiper.navigation) {
-                            swiper.navigation.destroy();
-                            swiper.navigation.init();
-                            swiper.navigation.update();
-                          }
+                          swiper.navigation.destroy();
+                          swiper.navigation.init();
+                          swiper.navigation.update();
                         });
                       }}
                       loop={galleryImages.length > 1}

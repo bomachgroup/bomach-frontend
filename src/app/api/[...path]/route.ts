@@ -3,11 +3,22 @@ import { NextRequest, NextResponse } from "next/server";
 const BACKEND_URL =
   process.env.BACKEND_INTERNAL_URL || "https://backend.bomachgroup.com";
 
+// Paths (prefixes or exact) registered without a trailing slash on the backend.
+// Adding a slash would cause a 301-redirect, downgrading POST → GET (405) or 404.
+const NO_SLASH_PREFIXES = ["auth/"];
+const NO_SLASH_EXACT = new Set([
+  "properties/upload-file",
+  "properties/upload-files-async",
+]);
+
 function buildTarget(path: string[], search: string): string {
   let targetPath = path.join("/");
-  // Always append trailing slash for Django endpoints (Django redirects non-slash URLs
-  // with a 301 which drops auth headers), unless the path contains a file extension.
-  if (targetPath && !targetPath.includes(".")) {
+  // Append trailing slash for Django endpoints (Django's APPEND_SLASH redirects
+  // non-slash URLs with a 301 which drops auth headers on the redirect).
+  // Skip for endpoints that are registered without a trailing slash and for
+  // paths containing a file extension.
+  const skipSlash = NO_SLASH_EXACT.has(targetPath) || NO_SLASH_PREFIXES.some((p) => targetPath.startsWith(p));
+  if (targetPath && !targetPath.includes(".") && !skipSlash) {
     targetPath += "/";
   }
   return `${BACKEND_URL}/api/${targetPath}${search}`;
