@@ -22,6 +22,7 @@ import {
   Star,
   Video,
   Landmark,
+  PlayCircle,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -57,11 +58,9 @@ export default function AdminPropertyEditPage() {
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
 
-  // Existing video URLs
-  const [existingVideos, setExistingVideos] = useState<string[]>([]);
-  // New video files
-  const [newVideoFiles, setNewVideoFiles] = useState<File[]>([]);
-  const [newVideoNames, setNewVideoNames] = useState<string[]>([]);
+  // Video URLs (YouTube)
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [videoInput, setVideoInput] = useState("");
 
   // Landmarks
   const [landmarks, setLandmarks] = useState<string[]>([]);
@@ -86,7 +85,7 @@ export default function AdminPropertyEditPage() {
           is_featured: property.is_featured,
         });
         setExistingImages(property.property_images || []);
-        setExistingVideos(property.property_videos || []);
+        setVideoUrls(property.property_videos || []);
         setLandmarks(property.landmarks || []);
       } catch {
         setError("Failed to load property");
@@ -117,21 +116,27 @@ export default function AdminPropertyEditPage() {
     setNewPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleNewVideos = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setNewVideoFiles((prev) => [...prev, ...files]);
-      setNewVideoNames((prev) => [...prev, ...files.map((f) => f.name)]);
+  const extractYoutubeId = (url: string): string | null => {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[7].length === 11) ? match[7] : null;
+  };
+
+  const getYoutubeThumbnail = (url: string) => {
+    const id = extractYoutubeId(url);
+    return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+  };
+
+  const addVideoUrl = () => {
+    const trimmed = videoInput.trim();
+    if (trimmed && !videoUrls.includes(trimmed)) {
+      setVideoUrls((prev) => [...prev, trimmed]);
+      setVideoInput("");
     }
   };
 
-  const removeExistingVideo = (index: number) => {
-    setExistingVideos((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const removeNewVideo = (index: number) => {
-    setNewVideoFiles((prev) => prev.filter((_, i) => i !== index));
-    setNewVideoNames((prev) => prev.filter((_, i) => i !== index));
+  const removeVideo = (index: number) => {
+    setVideoUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addLandmark = () => {
@@ -162,17 +167,7 @@ export default function AdminPropertyEditPage() {
         newImageUrls = results.map((r) => r.url);
       }
 
-      // Upload any new videos
-      let newVideoUrls: string[] = [];
-      if (newVideoFiles.length > 0) {
-        const results = await Promise.all(
-          newVideoFiles.map((vid) => uploadFile(vid, accessToken)),
-        );
-        newVideoUrls = results.map((r) => r.url);
-      }
-
       const allImages = [...existingImages, ...newImageUrls];
-      const allVideos = [...existingVideos, ...newVideoUrls];
 
       await updateProperty(
         propertyId,
@@ -182,7 +177,7 @@ export default function AdminPropertyEditPage() {
           category: formData.category,
           sub_category: formData.sub_category,
           property_images: allImages,
-          property_videos: allVideos,
+          property_videos: videoUrls,
           landmarks,
           address: formData.address,
           city: formData.city,
@@ -525,33 +520,39 @@ export default function AdminPropertyEditPage() {
           </div>
         </div>
 
-        {/* Video Tour — file upload */}
+        {/* Video Tour — YouTube URL */}
         <div className='bg-white rounded-2xl border border-secondary-100 shadow-sm p-6 space-y-5'>
           <div className='flex items-center gap-3 pb-4 border-b border-secondary-100'>
             <Video className='w-5 h-5 text-primary-600' />
             <h2 className='font-display text-lg font-bold text-secondary-900'>
-              Video Tour
+              Video Tour (YouTube)
             </h2>
           </div>
 
-          {/* Existing videos */}
-          {existingVideos.length > 0 && (
-            <div className='space-y-2'>
-              <p className='text-xs font-semibold text-secondary-500 uppercase tracking-wider'>
-                Current Videos
-              </p>
-              {existingVideos.map((url, idx) => (
+          {videoUrls.length > 0 && (
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+              {videoUrls.map((url, idx) => (
                 <div
                   key={idx}
-                  className='flex items-center gap-3 p-3 bg-secondary-50 rounded-xl border border-secondary-100'>
-                  <Video className='w-5 h-5 text-primary-600 shrink-0' />
-                  <span className='text-sm text-secondary-700 truncate flex-1'>
-                    {url.split("/").pop()}
-                  </span>
+                  className='relative aspect-video rounded-xl overflow-hidden border border-secondary-100 bg-secondary-900'>
+                  {getYoutubeThumbnail(url) ? (
+                    <img
+                      src={getYoutubeThumbnail(url)!}
+                      className='w-full h-full object-cover opacity-60'
+                      alt='YouTube Preview'
+                    />
+                  ) : (
+                    <div className='w-full h-full flex items-center justify-center'>
+                      <Video className='w-8 h-8 text-white/30' />
+                    </div>
+                  )}
+                  <div className='absolute inset-0 flex items-center justify-center'>
+                    <PlayCircle className='w-12 h-12 text-white/80' />
+                  </div>
                   <button
                     type='button'
-                    onClick={() => removeExistingVideo(idx)}
-                    className='p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors shrink-0'>
+                    onClick={() => removeVideo(idx)}
+                    className='absolute top-2 right-2 p-1.5 bg-red-500/90 text-white rounded-full hover:bg-red-600 transition-colors'>
                     <X size={14} />
                   </button>
                 </div>
@@ -559,54 +560,31 @@ export default function AdminPropertyEditPage() {
             </div>
           )}
 
-          {/* New videos */}
-          {newVideoNames.length > 0 && (
-            <div className='space-y-2'>
-              <p className='text-xs font-semibold text-secondary-500 uppercase tracking-wider'>
-                New Videos
-              </p>
-              {newVideoNames.map((name, idx) => (
-                <div
-                  key={idx}
-                  className='flex items-center gap-3 p-3 bg-primary-50 rounded-xl border border-primary-100'>
-                  <Video className='w-5 h-5 text-primary-600 shrink-0' />
-                  <span className='text-sm text-secondary-700 truncate flex-1'>
-                    {name}
-                  </span>
-                  <span className='text-xs text-secondary-400 shrink-0'>
-                    {(newVideoFiles[idx].size / (1024 * 1024)).toFixed(1)} MB
-                  </span>
-                  <button
-                    type='button'
-                    onClick={() => removeNewVideo(idx)}
-                    className='p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors shrink-0'>
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div>
+          <div className='flex gap-2'>
             <input
-              type='file'
-              accept='video/*'
-              multiple
-              onChange={handleNewVideos}
-              className='hidden'
-              id='edit-videos'
+              type='url'
+              className='flex-1 px-4 py-3 border-2 border-secondary-200 rounded-xl text-sm bg-white outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-400/20 transition-all placeholder:text-secondary-400'
+              placeholder='Paste YouTube URL (e.g. https://www.youtube.com/watch?v=...)'
+              value={videoInput}
+              onChange={(e) => setVideoInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addVideoUrl();
+                }
+              }}
             />
-            <label
-              htmlFor='edit-videos'
-              className='flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-secondary-200 hover:border-primary-400 hover:bg-primary-50 rounded-xl cursor-pointer transition-all text-secondary-400 hover:text-primary-600'>
-              <Plus className='w-5 h-5' />
-              <span className='text-sm font-medium'>Upload Video Files</span>
-            </label>
-            <p className='text-xs text-secondary-400 mt-2'>
-              Upload video files for the property tour. Supported formats: MP4,
-              MOV, AVI, WebM.
-            </p>
+            <button
+              type='button'
+              onClick={addVideoUrl}
+              className='px-4 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-sm font-medium flex items-center gap-1.5'>
+              <Plus className='w-4 h-4' />
+              <span className='hidden sm:inline font-semibold'>Add</span>
+            </button>
           </div>
+          <p className='text-xs text-secondary-400'>
+            Add one or more YouTube video URLs for the property virtual tour.
+          </p>
         </div>
 
         {/* Landmarks */}
