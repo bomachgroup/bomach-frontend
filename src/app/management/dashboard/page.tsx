@@ -11,6 +11,9 @@ import {
   Plus,
   ArrowUpRight,
   Loader2,
+  FileText,
+  MessageSquare,
+  Calendar,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 
@@ -20,6 +23,7 @@ interface StatCard {
   icon: React.ElementType;
   color: string;
   bgColor: string;
+  href?: string;
 }
 
 export default function AdminDashboardPage() {
@@ -70,6 +74,14 @@ export default function AdminDashboardPage() {
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
+    {
+      label: "Form Submissions",
+      value: "View All",
+      icon: FileText,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      href: "/management/submissions",
+    },
   ];
 
   if (loading) {
@@ -92,17 +104,26 @@ export default function AdminDashboardPage() {
             Welcome back, {user?.email || "Admin"}
           </p>
         </div>
-        <Link
-          href="/management/properties/create"
-          className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 sm:px-6 py-3 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-600/25 text-sm sm:text-base"
-        >
-          <Plus className="w-5 h-5" />
-          Add Property
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/management/submissions"
+            className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 sm:px-5 py-3 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-600/25 text-sm"
+          >
+            <FileText className="w-5 h-5" />
+            Form Submissions
+          </Link>
+          <Link
+            href="/management/properties/create"
+            className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-4 sm:px-5 py-3 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-600/25 text-sm"
+          >
+            <Plus className="w-5 h-5" />
+            Add Property
+          </Link>
+        </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
           <div
             key={stat.label}
@@ -113,7 +134,16 @@ export default function AdminDashboardPage() {
                 <stat.icon className={`w-6 h-6 ${stat.color}`} />
               </div>
             </div>
-            <p className="text-3xl font-bold text-secondary-900">{stat.value}</p>
+            {stat.href ? (
+              <Link
+                href={stat.href}
+                className="text-sm font-semibold text-purple-600 hover:text-purple-700"
+              >
+                {stat.value} →
+              </Link>
+            ) : (
+              <p className="text-3xl font-bold text-secondary-900">{stat.value}</p>
+            )}
             <p className="text-sm text-secondary-500 mt-1">{stat.label}</p>
           </div>
         ))}

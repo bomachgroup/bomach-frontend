@@ -113,13 +113,11 @@ export default function AdminProjectsPage() {
                   </p>
                 </div>
                 <div className='flex gap-2'>
-                  <a
+                  <Link
                     href={`/projects/${project.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className='inline-flex items-center gap-1 text-primary-600 text-sm hover:underline'>
-                    <ExternalLink className='w-3.5 h-3.5' /> View
-                  </a>
+                    className='text-primary-600 text-sm hover:underline'>
+                    View
+                  </Link>
                   <Link
                     href={`/management/projects/${project.id}/edit`}
                     className='text-secondary-700 text-sm hover:text-primary-600'>

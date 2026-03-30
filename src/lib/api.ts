@@ -920,3 +920,148 @@ export async function deleteProperty(
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
+
+// ── Submissions (Quotes, Contacts, Bookings) ──
+
+export interface QuoteRequest {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  location: string;
+  service: string;
+  sub_service: string | null;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface ContactMessage {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  location: string | null;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface BookingRequest {
+  id: number;
+  name: string;
+  phone: string;
+  date: string;
+  time: string;
+  property_name: string | null;
+  is_read: boolean;
+  is_confirmed: boolean;
+  created_at: string;
+}
+
+export async function getQuoteRequests(
+  accessToken: string,
+): Promise<QuoteRequest[]> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI("/properties/quote/", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function deleteQuoteRequest(
+  quoteId: number,
+  accessToken: string,
+): Promise<{ message: string }> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI(`/properties/quote/${quoteId}/`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function markQuoteAsRead(
+  quoteId: number,
+  accessToken: string,
+): Promise<{ message: string }> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI(`/properties/quote/${quoteId}/read/`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function getContactMessages(
+  accessToken: string,
+): Promise<ContactMessage[]> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI("/properties/contact/messages/", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function deleteContactMessage(
+  messageId: number,
+  accessToken: string,
+): Promise<{ message: string }> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI(`/properties/contact/${messageId}/`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function markContactAsRead(
+  messageId: number,
+  accessToken: string,
+): Promise<{ message: string }> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI(`/properties/contact/${messageId}/read/`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function getBookingRequests(
+  accessToken: string,
+): Promise<BookingRequest[]> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI("/properties/booking/requests/", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function deleteBookingRequest(
+  bookingId: number,
+  accessToken: string,
+): Promise<{ message: string }> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI(`/properties/booking/${bookingId}/`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function markBookingAsRead(
+  bookingId: number,
+  accessToken: string,
+): Promise<{ message: string }> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI(`/properties/booking/${bookingId}/read/`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function confirmBookingRequest(
+  bookingId: number,
+  accessToken: string,
+): Promise<{ message: string }> {
+  if (!accessToken) throw new Error("Authentication token required");
+  return fetchAPI(`/properties/booking/${bookingId}/confirm/`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}

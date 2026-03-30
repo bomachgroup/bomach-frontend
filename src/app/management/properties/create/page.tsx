@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { uploadFile, uploadFilesAsync, submitProperty } from "@/lib/api";
+import { uploadFile, submitProperty } from "@/lib/api";
 import {
   PROPERTY_CATEGORIES,
   NIGERIAN_STATES,
@@ -23,20 +23,16 @@ import {
   Star,
   Video,
   Landmark,
-  PlayCircle,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 const categoryNames = Object.keys(PROPERTY_CATEGORIES);
-const MAX_FILE_SIZE_MB = 5;
-const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export default function AdminPropertyCreatePage() {
   const { accessToken } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -58,9 +54,9 @@ export default function AdminPropertyCreatePage() {
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
-  // Videos (YouTube URLs)
-  const [videoUrls, setVideoUrls] = useState<string[]>([]);
-  const [videoInput, setVideoInput] = useState("");
+  // Videos
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
+  const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
 
   // Landmarks
   const [landmarks, setLandmarks] = useState<string[]>([]);
@@ -69,21 +65,11 @@ export default function AdminPropertyCreatePage() {
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const validFiles = files.filter((f) => {
-        if (f.size > MAX_FILE_SIZE) {
-          setError(`Image "${f.name}" exceeds the ${MAX_FILE_SIZE_MB}MB limit.`);
-          return false;
-        }
-        return true;
-      });
-
-      if (validFiles.length > 0) {
-        setImages((prev) => [...prev, ...validFiles]);
-        setPreviews((prev) => [
-          ...prev,
-          ...validFiles.map((f) => URL.createObjectURL(f)),
-        ]);
-      }
+      setImages((prev) => [...prev, ...files]);
+      setPreviews((prev) => [
+        ...prev,
+        ...files.map((f) => URL.createObjectURL(f)),
+      ]);
     }
   };
 
@@ -92,27 +78,17 @@ export default function AdminPropertyCreatePage() {
     setPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const extractYoutubeId = (url: string) => {
-    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[7].length === 11) ? match[7] : null;
-  };
-
-  const getYoutubeThumbnail = (url: string) => {
-    const id = extractYoutubeId(url);
-    return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
-  };
-
-  const addVideoUrl = () => {
-    const trimmed = videoInput.trim();
-    if (trimmed && !videoUrls.includes(trimmed)) {
-      setVideoUrls((prev) => [...prev, trimmed]);
-      setVideoInput("");
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setVideoFiles((prev) => [...prev, ...files]);
+      setVideoPreviews((prev) => [...prev, ...files.map((f) => f.name)]);
     }
   };
 
   const removeVideo = (index: number) => {
-    setVideoUrls((prev) => prev.filter((_, i) => i !== index));
+    setVideoFiles((prev) => prev.filter((_, i) => i !== index));
+    setVideoPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addLandmark = () => {
@@ -137,15 +113,21 @@ export default function AdminPropertyCreatePage() {
       // Upload images
       let imageUrls: string[] = [];
       if (images.length > 0) {
-        setLoadingStatus(`Uploading ${images.length} image${images.length > 1 ? "s" : ""}...`);
-        const results = await uploadFilesAsync(images, accessToken);
+        const results = await Promise.all(
+          images.map((img) => uploadFile(img, accessToken)),
+        );
         imageUrls = results.map((r) => r.url);
       }
 
       // Upload videos
-      // (YouTube URLs are already in videoUrls)
+      let videoUrls: string[] = [];
+      if (videoFiles.length > 0) {
+        const results = await Promise.all(
+          videoFiles.map((vid) => uploadFile(vid, accessToken)),
+        );
+        videoUrls = results.map((r) => r.url);
+      }
 
-      setLoadingStatus("Creating property...");
       await submitProperty(
         {
           name: formData.name,
@@ -446,76 +428,59 @@ export default function AdminPropertyCreatePage() {
           </p>
         </div>
 
-        {/* Video Tour — YouTube URL */}
+        {/* Video Tour — file upload */}
         <div className='bg-white rounded-2xl border border-secondary-100 shadow-sm p-6 space-y-5'>
           <div className='flex items-center gap-3 pb-4 border-b border-secondary-100'>
             <Video className='w-5 h-5 text-primary-600' />
             <h2 className='font-display text-lg font-bold text-secondary-900'>
-              Video Tour (YouTube)
+              Video Tour
             </h2>
           </div>
 
-          {videoUrls.length > 0 && (
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-              {videoUrls.map((url, idx) => (
+          {videoPreviews.length > 0 && (
+            <div className='space-y-2'>
+              {videoPreviews.map((name, idx) => (
                 <div
                   key={idx}
-                  className='relative aspect-video rounded-xl overflow-hidden border border-secondary-100 bg-secondary-900'>
-                  {getYoutubeThumbnail(url) ? (
-                    <img
-                      src={getYoutubeThumbnail(url)!}
-                      className='w-full h-full object-cover opacity-60'
-                      alt='YouTube Preview'
-                    />
-                  ) : (
-                    <div className='w-full h-full flex items-center justify-center'>
-                      <Video className='w-8 h-8 text-white/30' />
-                    </div>
-                  )}
-                  <div className='absolute inset-0 flex items-center justify-center'>
-                    <PlayCircle className='w-12 h-12 text-white/80' />
-                  </div>
+                  className='flex items-center gap-3 p-3 bg-secondary-50 rounded-xl border border-secondary-100'>
+                  <Video className='w-5 h-5 text-primary-600 shrink-0' />
+                  <span className='text-sm text-secondary-700 truncate flex-1'>
+                    {name}
+                  </span>
+                  <span className='text-xs text-secondary-400 shrink-0'>
+                    {(videoFiles[idx].size / (1024 * 1024)).toFixed(1)} MB
+                  </span>
                   <button
                     type='button'
                     onClick={() => removeVideo(idx)}
-                    className='absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-lg'>
+                    className='p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors shrink-0'>
                     <X size={14} />
                   </button>
-                  <div className='absolute bottom-0 inset-x-0 p-2 bg-black/60'>
-                    <p className='text-[10px] text-white truncate font-mono'>
-                      {url}
-                    </p>
-                  </div>
                 </div>
               ))}
             </div>
           )}
 
-          <div className='flex gap-2'>
+          <div>
             <input
-              type='url'
-              className={inputClasses}
-              placeholder='Paste YouTube URL (e.g. https://www.youtube.com/watch?v=...)'
-              value={videoInput}
-              onChange={(e) => setVideoInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addVideoUrl();
-                }
-              }}
+              type='file'
+              accept='video/*'
+              multiple
+              onChange={handleVideoChange}
+              className='hidden'
+              id='admin-videos'
             />
-            <button
-              type='button'
-              onClick={addVideoUrl}
-              className='px-4 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors shrink-0 flex items-center gap-2'>
+            <label
+              htmlFor='admin-videos'
+              className='flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-secondary-200 hover:border-primary-400 hover:bg-primary-50 rounded-xl cursor-pointer transition-all text-secondary-400 hover:text-primary-600'>
               <Plus className='w-5 h-5' />
-              <span className='hidden sm:inline font-semibold'>Add</span>
-            </button>
+              <span className='text-sm font-medium'>Upload Video Files</span>
+            </label>
+            <p className='text-xs text-secondary-400 mt-2'>
+              Upload video files for the property tour. Supported formats: MP4,
+              MOV, AVI, WebM.
+            </p>
           </div>
-          <p className='text-xs text-secondary-400'>
-            Add one or more YouTube video URLs for the property virtual tour.
-          </p>
         </div>
 
         {/* Landmarks */}
@@ -590,7 +555,7 @@ export default function AdminPropertyCreatePage() {
             ) : (
               <Save className='w-5 h-5' />
             )}
-            {loading ? loadingStatus || "Creating..." : "Create Property"}
+            {loading ? "Creating..." : "Create Property"}
           </button>
           <Link
             href='/management/properties'
