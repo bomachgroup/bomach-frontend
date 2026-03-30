@@ -77,7 +77,7 @@ export default function RichTextEditor({
   // Sync external value changes (e.g. loading existing data)
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value, false);
+      editor.commands.setContent(value, { emitUpdate: false });
     }
     // Only run when value changes from outside, not on every editor update
     // eslint-disable-next-line react-hooks/exhaustive-deps
