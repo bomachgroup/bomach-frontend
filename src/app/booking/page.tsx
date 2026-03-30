@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { submitBooking } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { submitBooking, getProperties } from "@/lib/api";
 import PageTitle from "@/components/PageTitle";
 import SectionHeader from "@/components/ui/SectionHeader";
 import AnimatedSection from "@/components/ui/AnimatedSection";
@@ -32,6 +32,19 @@ const contactInfo = [
 export default function BookingPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [propertyNames, setPropertyNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    getProperties()
+      .then((data) => {
+        const names = data.items
+          .map((p) => p.name)
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+        setPropertyNames(names);
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -131,12 +144,15 @@ export default function BookingPage() {
                       />
                     </div>
                     <div>
-                      <input
-                        type="text"
+                      <select
                         name="property_name"
-                        placeholder="Property Name (optional)"
                         className="input-premium"
-                      />
+                      >
+                        <option value="">Select Property (optional)</option>
+                        {propertyNames.map((name) => (
+                          <option key={name} value={name}>{name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-secondary-700 mb-2">

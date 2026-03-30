@@ -46,7 +46,7 @@ export default function PropertyDetailPage() {
   const [bookingError, setBookingError] = useState("");
 
   // Contact form state
-  const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "" });
+  const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", message: "" });
   const [contactLoading, setContactLoading] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactError, setContactError] = useState("");
@@ -150,13 +150,15 @@ export default function PropertyDetailPage() {
                       }}
                       onSwiper={(swiper) => {
                         setTimeout(() => {
-                          if (swiper.params.navigation && typeof swiper.params.navigation !== "boolean") {
+                          if (swiper && swiper.params && swiper.params.navigation && typeof swiper.params.navigation !== "boolean") {
                             swiper.params.navigation.prevEl = prevRef.current;
                             swiper.params.navigation.nextEl = nextRef.current;
                           }
-                          swiper.navigation.destroy();
-                          swiper.navigation.init();
-                          swiper.navigation.update();
+                          if (swiper && swiper.navigation) {
+                            swiper.navigation.destroy();
+                            swiper.navigation.init();
+                            swiper.navigation.update();
+                          }
                         });
                       }}
                       loop={galleryImages.length > 1}
@@ -553,7 +555,7 @@ export default function PropertyDetailPage() {
                             name: contactForm.name,
                             phone: contactForm.phone,
                             email: contactForm.email,
-                            property_name: property.name,
+                            message: contactForm.message,
                           });
                           setContactSuccess(true);
                         } catch (err: unknown) {
@@ -590,6 +592,15 @@ export default function PropertyDetailPage() {
                         name="email"
                         value={contactForm.email}
                         onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
+                      />
+                      <textarea
+                        rows={3}
+                        required
+                        className="w-full px-5 py-3 border-2 border-secondary-200 rounded-xl text-sm font-sans bg-white outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 transition-all placeholder:text-secondary-400 resize-none"
+                        placeholder="Message"
+                        name="message"
+                        value={contactForm.message}
+                        onChange={(e) => setContactForm((f) => ({ ...f, message: e.target.value }))}
                       />
                       {contactError && (
                         <p className="text-sm text-red-600">{contactError}</p>
