@@ -293,9 +293,9 @@ export default function PropertyDetailPage() {
                   {property.property_videos && property.property_videos.length > 0 ? (
                     <div className="space-y-6">
                       {property.property_videos.map((videoUrl, idx) => {
-                        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(shorts\/)|(watch\?))\??v?=?([^#&?]*).*/;
                         const match = videoUrl.match(regExp);
-                        const youtubeId = (match && match[7].length === 11) ? match[7] : null;
+                        const youtubeId = (match && match[8].length === 11) ? match[8] : null;
 
                         return (
                           <div key={idx} className="aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl ring-1 ring-white/10">
