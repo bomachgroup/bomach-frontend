@@ -5,10 +5,9 @@ const BACKEND_URL =
 
 function buildTarget(path: string[], search: string): string {
   let targetPath = path.join("/");
-  // Only append trailing slash if it's a single segment path (likely a collection)
-  // or it already had one (though Next.js strips it, we can guess based on path length)
-  // Endpoints like 'properties/upload-file' should NOT have a trailing slash if they didn't before.
-  if (path.length === 1 && targetPath && !targetPath.includes(".")) {
+  // Always append trailing slash for Django endpoints (Django redirects non-slash URLs
+  // with a 301 which drops auth headers), unless the path contains a file extension.
+  if (targetPath && !targetPath.includes(".")) {
     targetPath += "/";
   }
   return `${BACKEND_URL}/api/${targetPath}${search}`;

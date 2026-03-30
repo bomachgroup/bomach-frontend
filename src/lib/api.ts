@@ -242,14 +242,6 @@ export async function getBlogById(id: number): Promise<Blog> {
 }
 
 export async function getBlogBySlug(slug: string): Promise<BlogDetail> {
-  // Try fetching the individual blog by slug from API first
-  try {
-    const blog = await fetchAPI<BlogDetail>(`/properties/blogs/by-slug/${slug}/`);
-    return blog;
-  } catch {
-    // Endpoint may not exist, fall back to list search
-  }
-
   const blogs = await getBlogs(1, 100);
   const blog = blogs.find((b) => b.slug === slug);
   if (!blog) throw new Error("Blog not found");
@@ -739,7 +731,7 @@ export async function deleteJob(
 export async function submitQuote(
   data: Record<string, unknown>,
 ): Promise<{ message: string }> {
-  return fetchAPI("/quote/", {
+  return fetchAPI("/properties/quote/", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -748,7 +740,7 @@ export async function submitQuote(
 export async function submitContact(
   data: Record<string, unknown>,
 ): Promise<{ message: string }> {
-  return fetchAPI("/contact/", {
+  return fetchAPI("/properties/contact/", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -757,7 +749,7 @@ export async function submitContact(
 export async function submitBooking(
   data: Record<string, unknown>,
 ): Promise<{ message: string }> {
-  return fetchAPI("/booking/", {
+  return fetchAPI("/properties/booking/", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -766,7 +758,7 @@ export async function submitBooking(
 export async function checkAvailability(
   meetingTime: string,
 ): Promise<AvailabilityResponse> {
-  return fetchAPI("/booking/check-availability/", {
+  return fetchAPI("/properties/booking/check-availability/", {
     method: "POST",
     body: JSON.stringify({ meeting_time: meetingTime }),
   });
@@ -795,7 +787,7 @@ export async function getNewsletterEmails(
 export async function submitJobApplication(
   formData: FormData,
 ): Promise<{ message: string }> {
-  const res = await fetch(buildUrl(`/job-application/`), {
+  const res = await fetch(buildUrl(`/properties/job-application/`), {
     method: "POST",
     body: formData,
   });
