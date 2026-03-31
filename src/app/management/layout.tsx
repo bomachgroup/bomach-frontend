@@ -16,7 +16,6 @@ import {
   Briefcase,
   Mail,
   FileText,
-  Megaphone,
 } from "lucide-react";
 
 function AdminSidebar() {
@@ -41,7 +40,6 @@ function AdminSidebar() {
     { label: "Jobs", href: "/management/jobs", icon: Briefcase },
     { label: "Submissions", href: "/management/submissions", icon: FileText },
     { label: "Newsletter", href: "/management/newsletter", icon: Mail },
-    { label: "Announcements", href: "/management/announcements", icon: Megaphone },
   ];
 
   const sidebarContent = (
