@@ -466,8 +466,7 @@ export const blogDetails: Record<string, BlogDetail> = {
 export const employees: Employee[] = [
   { id: 1, name: "Tochukwu David", job_title: "CEO", image_url: "/images/team/ceo-tochukwu.jpg", facebook: null, twitter: null, instagram: null, priority: 1 },
   { id: 2, name: "George Arinze", job_title: "CTO", image_url: "/images/team/cto-george.jpg", facebook: null, twitter: null, instagram: null, priority: 2 },
-  { id: 3, name: "Ozioma Ogbozor", job_title: "Marketing Manager", image_url: "/images/team/marketing-ozioma.jpg", facebook: null, twitter: null, instagram: null, priority: 3 },
-  { id: 4, name: "Caleb Chinedu", job_title: "Civil Engineer", image_url: "/images/team/engineer-caleb.jpg", facebook: null, twitter: null, instagram: null, priority: 4 },
+  { id: 3, name: "Caleb Chinedu", job_title: "Civil Engineer", image_url: "/images/team/engineer-caleb.jpg", facebook: null, twitter: null, instagram: null, priority: 3 },
 ];
 
 // ── Partners ──
@@ -537,7 +536,7 @@ export const homepageData: HomepageData = {
   blogs,
   reviews,
   partners,
-  employees_count: 22,
+  employees_count: 21,
   project_count: 39,
   happy_customer_count: 53,
 };
@@ -545,7 +544,7 @@ export const homepageData: HomepageData = {
 export const aboutData: AboutData = {
   employees,
   partners,
-  employees_count: 22,
+  employees_count: 21,
   project_count: 39,
   happy_customer_count: 53,
 };
