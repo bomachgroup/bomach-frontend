@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination, Navigation, EffectFade } from "swiper/modules";
+import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import "swiper/css/effect-fade";
 import { getPropertyById, getProperties, sanitizeImageUrl, submitBooking, submitContact } from "@/lib/api";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import dynamic from "next/dynamic";
@@ -20,6 +19,8 @@ import {
   PlayCircle,
   Mail,
   Share2,
+  Volume2,
+  VolumeX,
   Loader2,
   Calendar,
   Tag,
@@ -39,6 +40,25 @@ export default function PropertyDetailPage() {
   const [error, setError] = useState(false);
   const [otherProperties, setOtherProperties] = useState<Property[]>([]);
 
+  const [copied, setCopied] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = property?.name || "Check out this property";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch {
+        // User cancelled or share failed — ignore
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   // Booking form state
   const [bookingForm, setBookingForm] = useState({ name: "", phone: "", date: "", time: "" });
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -53,6 +73,73 @@ export default function PropertyDetailPage() {
   const [contactError, setContactError] = useState("");
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<Map<number, HTMLIFrameElement | HTMLVideoElement>>(new Map());
+  const activeSlideRef = useRef(0);
+
+  // Pause all videos in the carousel
+  const pauseAllVideos = useCallback(() => {
+    videoRefs.current.forEach((el) => {
+      if (el instanceof HTMLIFrameElement) {
+        el.contentWindow?.postMessage(
+          JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+          "*",
+        );
+      } else if (el instanceof HTMLVideoElement) {
+        el.pause();
+      }
+    });
+  }, []);
+
+  // Play the video on a specific slide index (0-based among video slides)
+  const playVideo = useCallback((slideVideoIndex: number) => {
+    const el = videoRefs.current.get(slideVideoIndex);
+    if (!el) return;
+    if (el instanceof HTMLIFrameElement) {
+      el.contentWindow?.postMessage(
+        JSON.stringify({ event: "command", func: "playVideo", args: [] }),
+        "*",
+      );
+    } else if (el instanceof HTMLVideoElement) {
+      el.play().catch(() => {});
+    }
+  }, []);
+
+  // Toggle mute/unmute on all video elements
+  const toggleMute = useCallback(() => {
+    const newMuted = !videoMuted;
+    setVideoMuted(newMuted);
+    videoRefs.current.forEach((el) => {
+      if (el instanceof HTMLIFrameElement) {
+        el.contentWindow?.postMessage(
+          JSON.stringify({
+            event: "command",
+            func: newMuted ? "mute" : "unMute",
+            args: [],
+          }),
+          "*",
+        );
+      } else if (el instanceof HTMLVideoElement) {
+        el.muted = newMuted;
+      }
+    });
+  }, [videoMuted]);
+
+  // IntersectionObserver to pause videos when gallery scrolls out of view
+  useEffect(() => {
+    const galleryEl = galleryRef.current;
+    if (!galleryEl) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) {
+          pauseAllVideos();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(galleryEl);
+    return () => observer.disconnect();
+  }, [pauseAllVideos, property]);
 
   useEffect(() => {
     if (!propertyId) return;
@@ -101,6 +188,16 @@ export default function PropertyDetailPage() {
       : []
   ).map(sanitizeImageUrl);
 
+  // Extract YouTube IDs from video URLs for the carousel
+  const videoSlides = (property.property_videos || []).map((videoUrl) => {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(shorts\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = videoUrl.match(regExp);
+    const youtubeId = (match && match[8].length === 11) ? match[8] : null;
+    return { url: videoUrl, youtubeId };
+  });
+
+  const totalSlides = galleryImages.length + videoSlides.length;
+
   const locationString = `${property.address}, ${property.city}, ${property.state}`;
 
   return (
@@ -136,14 +233,13 @@ export default function PropertyDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Main Content - Right */}
             <div className="lg:col-span-2 order-1 lg:order-2 space-y-8">
-              {/* Premium Gallery */}
-              {galleryImages.length > 0 && (
+              {/* Premium Gallery (Videos first, then Images) */}
+              {totalSlides > 0 && (
                 <AnimatedSection>
-                  <div className="rounded-2xl overflow-hidden shadow-lg relative group">
+                  <div ref={galleryRef} className="rounded-2xl overflow-hidden shadow-lg relative group">
                     <Swiper
-                      modules={[Autoplay, Pagination, Navigation, EffectFade]}
-                      effect="fade"
-                      autoplay={{ delay: 3000, disableOnInteraction: false }}
+                      modules={[Autoplay, Pagination, Navigation]}
+                      autoplay={videoSlides.length > 0 ? false : { delay: 5000, disableOnInteraction: true, pauseOnMouseEnter: true }}
                       pagination={{ clickable: true }}
                       navigation={{
                         prevEl: prevRef.current,
@@ -151,22 +247,75 @@ export default function PropertyDetailPage() {
                       }}
                       onSwiper={(swiper) => {
                         setTimeout(() => {
-                          if (swiper && swiper.params && swiper.params.navigation && typeof swiper.params.navigation !== "boolean") {
+                          if (swiper?.params?.navigation && typeof swiper.params.navigation !== "boolean") {
                             swiper.params.navigation.prevEl = prevRef.current;
                             swiper.params.navigation.nextEl = nextRef.current;
                           }
-                          if (swiper && swiper.navigation) {
-                            swiper.navigation.destroy();
-                            swiper.navigation.init();
-                            swiper.navigation.update();
-                          }
+                          swiper?.navigation?.destroy();
+                          swiper?.navigation?.init();
+                          swiper?.navigation?.update();
                         });
                       }}
-                      loop={galleryImages.length > 1}
+                      onSlideChange={(swiper) => {
+                        const prevIndex = activeSlideRef.current;
+                        activeSlideRef.current = swiper.realIndex;
+                        // Pause all videos when leaving a slide
+                        pauseAllVideos();
+                        // If landing on a video slide, play it
+                        const newIndex = swiper.realIndex;
+                        if (newIndex < videoSlides.length) {
+                          playVideo(newIndex);
+                        }
+                      }}
+                      loop={totalSlides > 1}
                       className="property-gallery-swiper"
                     >
+                      {/* Videos come first */}
+                      {videoSlides.map((video, idx) => (
+                        <SwiperSlide key={`vid-${idx}`}>
+                          <div className="w-full h-[500px] lg:h-[500px] md:h-[350px] bg-black flex items-center justify-center relative">
+                            {video.youtubeId ? (
+                              <iframe
+                                ref={(el) => {
+                                  if (el) videoRefs.current.set(idx, el);
+                                }}
+                                src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0&modestbranding=1&enablejsapi=1${idx === 0 ? "&autoplay=1&mute=1" : ""}`}
+                                className="w-full h-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                title={`${property.name} - Video ${idx + 1}`}
+                              />
+                            ) : (
+                              <video
+                                ref={(el) => {
+                                  if (el) videoRefs.current.set(idx, el);
+                                }}
+                                src={video.url}
+                                className="w-full h-full object-contain"
+                                controls
+                                muted
+                                autoPlay={idx === 0}
+                                preload={idx === 0 ? "auto" : "metadata"}
+                                title={`${property.name} - Video ${idx + 1}`}
+                              />
+                            )}
+                            <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
+                              <PlayCircle className="w-3.5 h-3.5" /> Video
+                            </div>
+                            {/* Mute/Unmute toggle */}
+                            <button
+                              onClick={toggleMute}
+                              className="absolute bottom-4 right-4 z-10 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                              aria-label={videoMuted ? "Unmute video" : "Mute video"}
+                            >
+                              {videoMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                            </button>
+                          </div>
+                        </SwiperSlide>
+                      ))}
+                      {/* Then images */}
                       {galleryImages.map((img, idx) => (
-                        <SwiperSlide key={idx}>
+                        <SwiperSlide key={`img-${idx}`}>
                           <img
                             src={img}
                             alt={`${property.name} - Image ${idx + 1}`}
@@ -175,7 +324,7 @@ export default function PropertyDetailPage() {
                         </SwiperSlide>
                       ))}
                     </Swiper>
-                    {galleryImages.length > 1 && (
+                    {totalSlides > 1 && (
                       <>
                         <button
                           ref={prevRef}
@@ -291,54 +440,6 @@ export default function PropertyDetailPage() {
                       <MapPin className="w-12 h-12 mx-auto mb-3 text-primary-600/50" />
                       <p className="text-sm">Map coordinates not available for this property</p>
                       <p className="text-xs mt-1">{locationString}</p>
-                    </div>
-                  )}
-                </div>
-              </AnimatedSection>
-
-              {/* Video Tour */}
-              <AnimatedSection>
-                <div
-                  id="tour"
-                  className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-secondary-100 p-6 lg:p-8"
-                >
-                  <h2 className="font-display text-2xl font-bold text-secondary-900 mb-4 pb-4 border-b-2 border-secondary-100">
-                    Virtual Tour
-                  </h2>
-                  {property.property_videos && property.property_videos.length > 0 ? (
-                    <div className="space-y-6">
-                      {property.property_videos.map((videoUrl, idx) => {
-                        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(shorts\/)|(watch\?))\??v?=?([^#&?]*).*/;
-                        const match = videoUrl.match(regExp);
-                        const youtubeId = (match && match[8].length === 11) ? match[8] : null;
-
-                        return (
-                          <div key={idx} className="aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl ring-1 ring-white/10">
-                            {youtubeId ? (
-                              <iframe
-                                src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
-                                className="w-full h-full"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                title={`Property Video Tour ${idx + 1}`}
-                              />
-                            ) : (
-                              <video
-                                src={videoUrl}
-                                className="w-full h-full"
-                                controls
-                                preload="metadata"
-                                title={`Property Video Tour ${idx + 1}`}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="bg-gradient-to-br from-secondary-900 to-secondary-950 rounded-xl py-16 text-center text-white/60">
-                      <PlayCircle className="w-12 h-12 mx-auto mb-3 text-primary-600" />
-                      <p className="text-sm">Virtual tour coming soon</p>
                     </div>
                   )}
                 </div>
@@ -476,7 +577,6 @@ export default function PropertyDetailPage() {
                     {[
                       { label: "Overview", href: "#overview" },
                       { label: "Location Map", href: "#location-map" },
-                      { label: "Virtual Tour", href: "#tour" },
                       { label: "Book Consultation", href: "#consultation" },
                     ].map((item) => (
                       <li key={item.label}>
@@ -546,6 +646,18 @@ export default function PropertyDetailPage() {
                   </ul>
                 </div>
               </AnimatedSection>
+
+              {/* FAQ Button */}
+              <button
+                onClick={() => {
+                  // TODO: Replace with actual PDF URL
+                  // window.open("/path-to-faq.pdf", "_blank");
+                }}
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-2xl shadow-lg shadow-primary-600/20 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary-600/30 transition-all duration-200"
+              >
+                <FileText className="w-5 h-5" />
+                FAQ
+              </button>
 
               {/* Get More Info Form */}
               <AnimatedSection>
@@ -681,6 +793,20 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Share FAB — positioned above the BackToTop button */}
+      <button
+        onClick={handleShare}
+        className="fixed bottom-24 right-6 z-50 w-14 h-14 rounded-full bg-primary-600 text-white shadow-lg shadow-primary-600/30 hover:bg-primary-700 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center"
+        aria-label="Share property"
+      >
+        {copied ? <CheckCircle className="w-6 h-6" /> : <Share2 className="w-6 h-6" />}
+      </button>
+      {copied && (
+        <div className="fixed bottom-40 right-6 z-50 bg-secondary-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg">
+          Link copied!
+        </div>
+      )}
     </>
   );
 }
