@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination, Navigation } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
+import { Autoplay, Navigation } from "swiper/modules";
 import "swiper/css";
-import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { getPropertyById, getProperties, sanitizeImageUrl, submitBooking, submitContact } from "@/lib/api";
 import AnimatedSection from "@/components/ui/AnimatedSection";
@@ -74,6 +74,8 @@ export default function PropertyDetailPage() {
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const swiperRef = useRef<SwiperType | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const videoRefs = useRef<Map<number, HTMLIFrameElement | HTMLVideoElement>>(new Map());
   const activeSlideRef = useRef(0);
 
@@ -236,111 +238,173 @@ export default function PropertyDetailPage() {
               {/* Premium Gallery (Videos first, then Images) */}
               {totalSlides > 0 && (
                 <AnimatedSection>
-                  <div ref={galleryRef} className="rounded-2xl overflow-hidden shadow-lg relative group">
-                    <Swiper
-                      modules={[Autoplay, Pagination, Navigation]}
-                      autoplay={videoSlides.length > 0 ? false : { delay: 5000, disableOnInteraction: true, pauseOnMouseEnter: true }}
-                      pagination={{ clickable: true }}
-                      navigation={{
-                        prevEl: prevRef.current,
-                        nextEl: nextRef.current,
-                      }}
-                      onSwiper={(swiper) => {
-                        setTimeout(() => {
-                          if (swiper?.params?.navigation && typeof swiper.params.navigation !== "boolean") {
-                            swiper.params.navigation.prevEl = prevRef.current;
-                            swiper.params.navigation.nextEl = nextRef.current;
+                  <div ref={galleryRef} className="space-y-3">
+                    {/* Main Carousel */}
+                    <div className="rounded-2xl overflow-hidden shadow-lg relative group">
+                      <Swiper
+                        modules={[Autoplay, Navigation]}
+                        autoplay={videoSlides.length > 0 ? false : { delay: 5000, disableOnInteraction: true, pauseOnMouseEnter: true }}
+                        navigation={{
+                          prevEl: prevRef.current,
+                          nextEl: nextRef.current,
+                        }}
+                        onSwiper={(swiper) => {
+                          swiperRef.current = swiper;
+                          setTimeout(() => {
+                            if (swiper?.params?.navigation && typeof swiper.params.navigation !== "boolean") {
+                              swiper.params.navigation.prevEl = prevRef.current;
+                              swiper.params.navigation.nextEl = nextRef.current;
+                            }
+                            swiper?.navigation?.destroy();
+                            swiper?.navigation?.init();
+                            swiper?.navigation?.update();
+                          });
+                        }}
+                        onSlideChange={(swiper) => {
+                          activeSlideRef.current = swiper.realIndex;
+                          setActiveIndex(swiper.realIndex);
+                          pauseAllVideos();
+                          const newIndex = swiper.realIndex;
+                          if (newIndex < videoSlides.length) {
+                            playVideo(newIndex);
                           }
-                          swiper?.navigation?.destroy();
-                          swiper?.navigation?.init();
-                          swiper?.navigation?.update();
-                        });
-                      }}
-                      onSlideChange={(swiper) => {
-                        const prevIndex = activeSlideRef.current;
-                        activeSlideRef.current = swiper.realIndex;
-                        // Pause all videos when leaving a slide
-                        pauseAllVideos();
-                        // If landing on a video slide, play it
-                        const newIndex = swiper.realIndex;
-                        if (newIndex < videoSlides.length) {
-                          playVideo(newIndex);
-                        }
-                      }}
-                      loop={totalSlides > 1}
-                      className="property-gallery-swiper"
-                    >
-                      {/* Videos come first */}
-                      {videoSlides.map((video, idx) => (
-                        <SwiperSlide key={`vid-${idx}`}>
-                          <div className="w-full h-[500px] lg:h-[500px] md:h-[350px] bg-black flex items-center justify-center relative">
+                        }}
+                        loop={totalSlides > 1}
+                        className="property-gallery-swiper"
+                      >
+                        {/* Videos come first */}
+                        {videoSlides.map((video, idx) => (
+                          <SwiperSlide key={`vid-${idx}`}>
+                            <div className="w-full h-[500px] lg:h-[500px] md:h-[350px] bg-black flex items-center justify-center relative">
+                              {video.youtubeId ? (
+                                <iframe
+                                  ref={(el) => {
+                                    if (el) videoRefs.current.set(idx, el);
+                                  }}
+                                  src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0&modestbranding=1&enablejsapi=1${idx === 0 ? "&autoplay=1&mute=1" : ""}`}
+                                  className="w-full h-full"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  title={`${property.name} - Video ${idx + 1}`}
+                                />
+                              ) : (
+                                <video
+                                  ref={(el) => {
+                                    if (el) videoRefs.current.set(idx, el);
+                                  }}
+                                  src={video.url}
+                                  className="w-full h-full object-contain"
+                                  controls
+                                  muted
+                                  autoPlay={idx === 0}
+                                  preload={idx === 0 ? "auto" : "metadata"}
+                                  title={`${property.name} - Video ${idx + 1}`}
+                                />
+                              )}
+                              <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
+                                <PlayCircle className="w-3.5 h-3.5" /> Video
+                              </div>
+                              <button
+                                onClick={toggleMute}
+                                className="absolute bottom-4 right-4 z-10 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                                aria-label={videoMuted ? "Unmute video" : "Mute video"}
+                              >
+                                {videoMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                              </button>
+                            </div>
+                          </SwiperSlide>
+                        ))}
+                        {/* Then images */}
+                        {galleryImages.map((img, idx) => (
+                          <SwiperSlide key={`img-${idx}`}>
+                            <img
+                              src={img}
+                              alt={`${property.name} - Image ${idx + 1}`}
+                              className="w-full h-[500px] lg:h-[500px] md:h-[350px] object-contain bg-secondary-950"
+                            />
+                          </SwiperSlide>
+                        ))}
+                      </Swiper>
+                      {totalSlides > 1 && (
+                        <>
+                          <button
+                            ref={prevRef}
+                            aria-label="Previous slide"
+                            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300 opacity-0 group-hover:opacity-100"
+                          >
+                            <ArrowLeft size={20} />
+                          </button>
+                          <button
+                            ref={nextRef}
+                            aria-label="Next slide"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300 opacity-0 group-hover:opacity-100"
+                          >
+                            <ArrowRight size={20} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Thumbnail Strip */}
+                    {totalSlides > 1 && (
+                      <div className="flex gap-2.5 justify-center overflow-x-auto p-1 scrollbar-thin">
+                        {/* Video thumbnails first */}
+                        {videoSlides.map((video, idx) => (
+                          <button
+                            key={`thumb-vid-${idx}`}
+                            onClick={() => {
+                              if (swiperRef.current) {
+                                swiperRef.current.slideToLoop(idx);
+                              }
+                            }}
+                            className={`relative shrink-0 w-16 h-16 rounded-lg overflow-hidden transition-all duration-200 border-2 ${
+                              activeIndex === idx
+                                ? "border-red-500 scale-105 shadow-md"
+                                : "border-transparent opacity-70 hover:opacity-100"
+                            }`}
+                          >
                             {video.youtubeId ? (
-                              <iframe
-                                ref={(el) => {
-                                  if (el) videoRefs.current.set(idx, el);
-                                }}
-                                src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0&modestbranding=1&enablejsapi=1${idx === 0 ? "&autoplay=1&mute=1" : ""}`}
-                                className="w-full h-full"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                title={`${property.name} - Video ${idx + 1}`}
+                              <img
+                                src={`https://img.youtube.com/vi/${video.youtubeId}/default.jpg`}
+                                alt={`Video ${idx + 1}`}
+                                className="w-full h-full object-cover"
                               />
                             ) : (
-                              <video
-                                ref={(el) => {
-                                  if (el) videoRefs.current.set(idx, el);
-                                }}
-                                src={video.url}
-                                className="w-full h-full object-contain"
-                                controls
-                                muted
-                                autoPlay={idx === 0}
-                                preload={idx === 0 ? "auto" : "metadata"}
-                                title={`${property.name} - Video ${idx + 1}`}
-                              />
+                              <div className="w-full h-full bg-secondary-900 flex items-center justify-center">
+                                <PlayCircle className="w-5 h-5 text-white" />
+                              </div>
                             )}
-                            <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
-                              <PlayCircle className="w-3.5 h-3.5" /> Video
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <PlayCircle className="w-5 h-5 text-white" />
                             </div>
-                            {/* Mute/Unmute toggle */}
+                          </button>
+                        ))}
+                        {/* Image thumbnails */}
+                        {galleryImages.map((img, idx) => {
+                          const slideIndex = videoSlides.length + idx;
+                          return (
                             <button
-                              onClick={toggleMute}
-                              className="absolute bottom-4 right-4 z-10 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/80 transition-colors"
-                              aria-label={videoMuted ? "Unmute video" : "Mute video"}
+                              key={`thumb-img-${idx}`}
+                              onClick={() => {
+                                if (swiperRef.current) {
+                                  swiperRef.current.slideToLoop(slideIndex);
+                                }
+                              }}
+                              className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden transition-all duration-200 border-2 ${
+                                activeIndex === slideIndex
+                                  ? "border-red-500 scale-105 shadow-md"
+                                  : "border-transparent opacity-70 hover:opacity-100"
+                              }`}
                             >
-                              {videoMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                              <img
+                                src={img}
+                                alt={`Image ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
                             </button>
-                          </div>
-                        </SwiperSlide>
-                      ))}
-                      {/* Then images */}
-                      {galleryImages.map((img, idx) => (
-                        <SwiperSlide key={`img-${idx}`}>
-                          <img
-                            src={img}
-                            alt={`${property.name} - Image ${idx + 1}`}
-                            className="w-full h-[500px] lg:h-[500px] md:h-[350px] object-cover"
-                          />
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
-                    {totalSlides > 1 && (
-                      <>
-                        <button
-                          ref={prevRef}
-                          aria-label="Previous slide"
-                          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300 opacity-0 group-hover:opacity-100"
-                        >
-                          <ArrowLeft size={20} />
-                        </button>
-                        <button
-                          ref={nextRef}
-                          aria-label="Next slide"
-                          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300 opacity-0 group-hover:opacity-100"
-                        >
-                          <ArrowRight size={20} />
-                        </button>
-                      </>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 </AnimatedSection>
