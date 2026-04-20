@@ -8,9 +8,10 @@ import HomeTestimonials from "@/components/home/HomeTestimonials";
 import HomePartners from "@/components/home/HomePartners";
 import HomeSkillBars from "@/components/home/HomeSkillBars";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-import AnimatedCard from "@/components/ui/AnimatedCard";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import SectionHeader from "@/components/ui/SectionHeader";
+import HomePageAnimator from "@/components/gsap/HomePageAnimator";
+import GSAPMagnetic from "@/components/gsap/GSAPMagnetic";
 import {
   Play,
   ArrowRight,
@@ -51,6 +52,9 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Global GSAP scroll animations — targets .gsap-* classes below */}
+      <HomePageAnimator />
+
       {/* ─── 1. Hero Slider ─── */}
       <HeroSlider sliders={data.sliders} />
 
@@ -61,13 +65,15 @@ export default async function HomePage() {
             {/* Image with play button */}
             <AnimatedSection direction="left">
               <div className="relative rounded-2xl overflow-hidden group h-[400px] lg:h-[500px]">
-                <Image
-                  src="/images/hero/bomach-real.jpg"
-                  alt="Bomach Group experience"
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover"
-                />
+                <div className="gsap-parallax-img absolute inset-0">
+                  <Image
+                    src="/images/hero/bomach-real.jpg"
+                    alt="Bomach Group experience"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
                 <div className="absolute inset-0 bg-secondary-950/30 group-hover:bg-secondary-950/40 transition-colors duration-300" />
                 <a
                   href="https://www.youtube.com/watch?v=3c2NoilqL64"
@@ -147,9 +153,9 @@ export default async function HomePage() {
             />
           </AnimatedSection>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {data.services.map((service, idx) => (
-              <AnimatedCard key={service.id} index={idx} staggerDelay={0.1}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" style={{ perspective: "1000px" }}>
+            {data.services.map((service) => (
+              <GSAPMagnetic key={service.id} strength={0.08} className="gsap-service-card">
                 <Link
                   href={`/services/${service.slug}`}
                   className="card-premium-hover block p-8 group"
@@ -171,7 +177,7 @@ export default async function HomePage() {
                     />
                   </div>
                 </Link>
-              </AnimatedCard>
+              </GSAPMagnetic>
             ))}
           </div>
         </div>
@@ -221,13 +227,13 @@ export default async function HomePage() {
         <div className="container-custom">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <AnimatedSection direction="left">
-              <div className="relative rounded-2xl overflow-hidden">
+              <div className="gsap-parallax-img relative rounded-2xl overflow-hidden h-[400px] lg:h-[550px]">
                 <Image
                   src="/images/hero/bomach-real4.jpg"
                   alt="Service experience"
                   width={800}
                   height={600}
-                  className="w-full h-[400px] lg:h-[550px] object-cover"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </AnimatedSection>
@@ -320,14 +326,16 @@ export default async function HomePage() {
 
             {/* Image + CTA */}
             <AnimatedSection direction="right" delay={0.2}>
-              <div className="relative rounded-2xl overflow-hidden">
-                <Image
-                  src="/images/hero/bomach-it.jpg"
-                  alt="Bomach projects"
-                  width={800}
-                  height={600}
-                  className="w-full h-[500px] lg:h-[600px] object-cover"
-                />
+              <div className="relative rounded-2xl overflow-hidden h-[500px] lg:h-[600px]">
+                <div className="gsap-parallax-img absolute inset-0">
+                  <Image
+                    src="/images/hero/bomach-it.jpg"
+                    alt="Bomach projects"
+                    width={800}
+                    height={600}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-secondary-950/80 via-secondary-950/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-8">
                   <h3 className="font-display text-2xl font-black text-white mb-2">
@@ -336,7 +344,7 @@ export default async function HomePage() {
                   <p className="text-white/70 mb-6">
                     Reach out to us and let us help you.
                   </p>
-                  <Link href="/booking" className="btn-primary">
+                  <Link href="/booking" className="gsap-cta btn-primary">
                     Book Appointment
                     <ArrowRight size={18} className="ml-2" />
                   </Link>
@@ -361,32 +369,31 @@ export default async function HomePage() {
             </AnimatedSection>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {data.blogs.slice(0, 3).map((blog, idx) => (
-                <AnimatedCard key={blog.id} index={idx} staggerDelay={0.15}>
-                  <Link
-                    href={`/blog/${blog.slug}`}
-                    className="group block relative h-[420px] rounded-2xl overflow-hidden"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={sanitizeImageUrl(blog.image_url)}
-                      alt={blog.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-secondary-950/90 via-secondary-950/30 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6">
-                      <span className="text-primary-400 text-xs font-bold uppercase tracking-wider">
-                        {blog.author}
-                      </span>
-                      <h3 className="font-display text-xl font-bold text-white mt-2 line-clamp-2">
-                        {blog.title}
-                      </h3>
-                      <p className="text-white/60 text-sm mt-2 line-clamp-2">
-                        {blog.short_content}
-                      </p>
-                    </div>
-                  </Link>
-                </AnimatedCard>
+              {data.blogs.slice(0, 3).map((blog) => (
+                <Link
+                  key={blog.id}
+                  href={`/blog/${blog.slug}`}
+                  className="gsap-blog-card group block relative h-[420px] rounded-2xl overflow-hidden"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={sanitizeImageUrl(blog.image_url)}
+                    alt={blog.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-secondary-950/90 via-secondary-950/30 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <span className="text-primary-400 text-xs font-bold uppercase tracking-wider">
+                      {blog.author}
+                    </span>
+                    <h3 className="font-display text-xl font-bold text-white mt-2 line-clamp-2">
+                      {blog.title}
+                    </h3>
+                    <p className="text-white/60 text-sm mt-2 line-clamp-2">
+                      {blog.short_content}
+                    </p>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -445,7 +452,7 @@ export default async function HomePage() {
             {/* Stats */}
             <AnimatedSection direction="right" delay={0.2}>
               <div className="grid grid-cols-1 sm:grid-cols-1 gap-6 lg:mt-16">
-                <div className="glass-card rounded-2xl p-8 text-center">
+                <div className="gsap-stat glass-card rounded-2xl p-8 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-primary-600/10 flex items-center justify-center mx-auto mb-4">
                     <Users size={28} className="text-primary-600" />
                   </div>
@@ -458,7 +465,7 @@ export default async function HomePage() {
                     Expert Employees
                   </p>
                 </div>
-                <div className="glass-card rounded-2xl p-8 text-center">
+                <div className="gsap-stat glass-card rounded-2xl p-8 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-primary-600/10 flex items-center justify-center mx-auto mb-4">
                     <FolderKanban size={28} className="text-primary-600" />
                   </div>
@@ -471,7 +478,7 @@ export default async function HomePage() {
                     Completed Projects
                   </p>
                 </div>
-                <div className="glass-card rounded-2xl p-8 text-center">
+                <div className="gsap-stat glass-card rounded-2xl p-8 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-primary-600/10 flex items-center justify-center mx-auto mb-4">
                     <Heart size={28} className="text-primary-600" />
                   </div>
