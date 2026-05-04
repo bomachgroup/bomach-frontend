@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBlog, uploadFile } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 
 export default function AdminBlogCreatePage() {
   const router = useRouter();
@@ -216,13 +217,12 @@ export default function AdminBlogCreatePage() {
             className='block text-sm font-medium text-secondary-700 mb-2'>
             Full Content
           </label>
-          <textarea
-            id='content'
-            name='content'
+          <RichTextEditor
             value={formData.content}
-            onChange={handleInputChange}
-            rows={8}
-            className='w-full px-3 py-2 border border-secondary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+            onChange={(html) =>
+              setFormData((prev) => ({ ...prev, content: html }))
+            }
+            placeholder='Write the full blog content...'
           />
         </div>
 
