@@ -241,6 +241,21 @@ export async function getBlogById(id: number): Promise<Blog> {
 }
 
 export async function getBlogBySlug(slug: string): Promise<BlogDetail> {
+  try {
+    // Try to fetch by slug directly if backend supports it via filter
+    const data = await fetchAPI<{ items: Blog[] }>(`/properties/blogs/?slug=${slug}`);
+    if (data.items && data.items.length > 0) {
+      const blog = data.items[0];
+      return {
+        ...blog,
+        content: blog.content || blog.short_content || "",
+      };
+    }
+  } catch (err) {
+    console.warn("getBlogBySlug direct lookup failed, falling back to list:", err);
+  }
+
+  // Fallback to searching the list
   const blogs = await getBlogs(1, 100);
   const blog = blogs.find((b) => b.slug === slug);
   if (!blog) throw new Error("Blog not found");
