@@ -223,7 +223,10 @@ export async function getBlogs(page = 1, size = 100): Promise<Blog[]> {
       has_next: boolean;
       has_previous: boolean;
     }>(`/properties/blogs/?page=${page}&size=${size}`);
-    return data.items;
+    return data.items.map((blog) => ({
+      ...blog,
+      image_url: sanitizeImageUrl(blog.image_url),
+    }));
   } catch (err) {
     console.warn("getBlogs error:", err);
     throw err;
@@ -233,7 +236,10 @@ export async function getBlogs(page = 1, size = 100): Promise<Blog[]> {
 export async function getBlogById(id: number): Promise<Blog> {
   try {
     const blog = await fetchAPI<Blog>(`/properties/blogs/${id}/`);
-    return blog;
+    return {
+      ...blog,
+      image_url: sanitizeImageUrl(blog.image_url),
+    };
   } catch (err) {
     console.warn("getBlogById error", err);
     throw err;
@@ -243,13 +249,19 @@ export async function getBlogById(id: number): Promise<Blog> {
 export async function getBlogBySlug(slug: string): Promise<BlogDetail> {
   try {
     // Try to fetch by slug directly if backend supports it via filter
-    const data = await fetchAPI<{ items: Blog[] }>(`/properties/blogs/?slug=${slug}`);
+    const data = await fetchAPI<{ items: Blog[] }>(
+      `/properties/blogs/?slug=${encodeURIComponent(slug)}`,
+    );
     if (data.items && data.items.length > 0) {
       const blog = data.items[0];
-      return {
-        ...blog,
-        content: blog.content || blog.short_content || "",
-      };
+      // ONLY return if the slug actually matches (in case backend ignores the filter)
+      if (blog.slug === slug) {
+        return {
+          ...blog,
+          image_url: sanitizeImageUrl(blog.image_url),
+          content: blog.content || blog.short_content || "",
+        };
+      }
     }
   } catch (err) {
     console.warn("getBlogBySlug direct lookup failed, falling back to list:", err);
@@ -262,6 +274,7 @@ export async function getBlogBySlug(slug: string): Promise<BlogDetail> {
 
   return {
     ...blog,
+    image_url: sanitizeImageUrl(blog.image_url),
     content: blog.content || blog.short_content || "",
   };
 }

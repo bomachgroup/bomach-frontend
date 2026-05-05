@@ -63,6 +63,7 @@ export default function RichTextEditor({
       Underline,
     ],
     content: value,
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class:

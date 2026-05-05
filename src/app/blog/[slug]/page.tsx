@@ -69,7 +69,7 @@ export default async function BlogDetailPage({
                   {/* Featured Image */}
                   <div className="rounded-2xl overflow-hidden mb-8 shadow-lg">
                     <img
-                      src={blog.image_url}
+                      src={blog.image_url || undefined}
                       alt={blog.title}
                       className="w-full h-auto object-cover"
                     />
@@ -120,7 +120,7 @@ export default async function BlogDetailPage({
                           className="shrink-0 w-20 h-20 rounded-xl overflow-hidden"
                         >
                           <img
-                            src={b.image_url}
+                            src={b.image_url || undefined}
                             alt={b.title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110"
                           />

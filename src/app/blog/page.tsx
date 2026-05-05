@@ -36,7 +36,7 @@ export default async function BlogPage() {
                     <div className="relative h-60 overflow-hidden">
                       <Link href={`/blog/${blog.slug}`}>
                         <img
-                          src={blog.image_url}
+                          src={blog.image_url || undefined}
                           alt={blog.title}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
@@ -103,7 +103,7 @@ export default async function BlogPage() {
                           className="shrink-0 w-20 h-20 rounded-xl overflow-hidden"
                         >
                           <img
-                            src={blog.image_url}
+                            src={blog.image_url || undefined}
                             alt={blog.title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110"
                           />

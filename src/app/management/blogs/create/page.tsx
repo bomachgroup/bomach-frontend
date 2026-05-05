@@ -44,8 +44,8 @@ export default function AdminBlogCreatePage() {
         [name]: type === "number" ? parseInt(value) || 0 : value,
       };
 
-      // Auto-generate slug from title if slug was not manually edited or is empty
-      if (name === "title" && !prev.slug) {
+      // Auto-generate slug from title in real-time
+      if (name === "title") {
         newData.slug = generateSlug(value);
       }
 

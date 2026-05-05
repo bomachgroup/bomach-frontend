@@ -62,13 +62,38 @@ export default function AdminBlogEditPage() {
     }
   }, [blogId, router]);
 
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "") // Remove special chars
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-") // Remove consecutive hyphens
+      .trim();
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value, type } = e.target;
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: type === "number" ? parseInt(value) || 0 : value,
+      };
+
+      // Auto-generate slug from title in real-time
+      if (name === "title") {
+        newData.slug = generateSlug(value);
+      }
+
+      return newData;
+    });
+  };
+
+  const handleSlugBlur = () => {
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseInt(value) || 0 : value,
+      slug: generateSlug(prev.slug),
     }));
   };
 
@@ -182,6 +207,7 @@ export default function AdminBlogEditPage() {
               name='slug'
               value={formData.slug}
               onChange={handleInputChange}
+              onBlur={handleSlugBlur}
               required
               className='w-full px-3 py-2 border border-secondary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
             />
