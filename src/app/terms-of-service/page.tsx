@@ -2,8 +2,9 @@ import PageTitle from "@/components/PageTitle";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service - Bomach Group",
-  description: "Terms of Service - Bomach Group of Company. Read our terms and conditions for using our website and services.",
+  title: "Terms of Service",
+  description: "Read the Bomach Group terms and conditions for using our website and services.",
+  alternates: { canonical: "/terms-of-service" },
 };
 
 export default function TermsOfServicePage() {

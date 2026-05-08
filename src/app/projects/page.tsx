@@ -6,9 +6,10 @@ import type { Metadata } from "next";
 import type { Project, Service } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Projects - Bomach Group",
+  title: "Our Projects",
   description:
-    "View our portfolio of construction and engineering projects.",
+    "Explore Bomach Group's portfolio of completed and ongoing construction, engineering, and real estate projects across Nigeria.",
+  alternates: { canonical: "/projects" },
 };
 
 export const revalidate = 60;

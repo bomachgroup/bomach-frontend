@@ -1,9 +1,12 @@
-import { getProjectBySlug, getProjects } from "@/lib/api";
+import { getProjectBySlug, getProjects, sanitizeImageUrl } from "@/lib/api";
 import { notFound } from "next/navigation";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { Calendar, Layers, FolderOpen } from "lucide-react";
 import type { Metadata } from "next";
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://bomachgroup.com";
 
 export const revalidate = 60;
 
@@ -24,9 +27,33 @@ export async function generateMetadata({
   try {
     const { slug } = await params;
     const project = await getProjectBySlug(slug);
-    return { title: `${project.name} - Bomach Group` };
+    const description = `Explore ${project.name} — a Bomach Group project showcasing our expertise in construction, engineering, and real estate.`;
+    const image = project.image_url
+      ? sanitizeImageUrl(project.image_url)
+      : undefined;
+    const url = `${SITE_URL}/projects/${slug}`;
+
+    return {
+      title: project.name,
+      description,
+      alternates: { canonical: `/projects/${slug}` },
+      openGraph: {
+        type: "article",
+        title: project.name,
+        description,
+        url,
+        siteName: "Bomach Group",
+        images: image ? [{ url: image, alt: project.name }] : undefined,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: project.name,
+        description,
+        images: image ? [image] : undefined,
+      },
+    };
   } catch {
-    return { title: "Project - Bomach Group" };
+    return { title: "Project" };
   }
 }
 

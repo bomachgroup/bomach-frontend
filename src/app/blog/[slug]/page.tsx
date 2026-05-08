@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { getBlogBySlug, getBlogs } from "@/lib/api";
+import { getBlogBySlug, getBlogs, sanitizeImageUrl } from "@/lib/api";
 import { notFound } from "next/navigation";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import { CalendarCheck, User } from "lucide-react";
 import type { Metadata } from "next";
 import type { Blog } from "@/lib/types";
+import { ArticleJsonLd } from "@/components/seo/JsonLd";
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://bomachgroup.com";
 
 export const revalidate = 60;
 
@@ -26,9 +30,38 @@ export async function generateMetadata({
   try {
     const { slug } = await params;
     const blog = await getBlogBySlug(slug);
-    return { title: `${blog.title} - Bomach Group` };
+    const plainText = blog.content
+      ? blog.content.replace(/<[^>]*>/g, "").trim()
+      : "";
+    const description =
+      plainText.slice(0, 160) ||
+      `Read "${blog.title}" on the Bomach Group blog.`;
+    const image = blog.image_url ? sanitizeImageUrl(blog.image_url) : undefined;
+    const url = `${SITE_URL}/blog/${slug}`;
+
+    return {
+      title: blog.title,
+      description,
+      alternates: { canonical: `/blog/${slug}` },
+      openGraph: {
+        type: "article",
+        title: blog.title,
+        description,
+        url,
+        siteName: "Bomach Group",
+        publishedTime: blog.date,
+        authors: blog.author ? [blog.author] : undefined,
+        images: image ? [{ url: image, alt: blog.title }] : undefined,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: blog.title,
+        description,
+        images: image ? [image] : undefined,
+      },
+    };
   } catch {
-    return { title: "Blog - Bomach Group" };
+    return { title: "Blog" };
   }
 }
 
@@ -51,6 +84,14 @@ export default async function BlogDetailPage({
 
   return (
     <>
+      <ArticleJsonLd
+        title={blog.title}
+        description={blog.content?.replace(/<[^>]*>/g, "").trim().slice(0, 200)}
+        image={blog.image_url ? sanitizeImageUrl(blog.image_url) : undefined}
+        datePublished={blog.date}
+        author={blog.author}
+        url={`${SITE_URL}/blog/${slug}`}
+      />
       <PageTitle
         title={blog.title}
         breadcrumbs={[

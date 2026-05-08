@@ -2,7 +2,8 @@ import PageTitle from "@/components/PageTitle";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - Bomach Group",
+  title: "Privacy Policy",
+  alternates: { canonical: "/privacy" },
   description: "Privacy Policy - Bomach Group of Company. Learn how we collect, use, and protect your personal data.",
 };
 

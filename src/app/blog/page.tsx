@@ -8,8 +8,10 @@ import type { Metadata } from "next";
 import type { Blog } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Blog - Bomach Group",
-  description: "Latest news and updates from Bomach Group.",
+  title: "Blog",
+  description:
+    "Latest news, insights, and updates from Bomach Group on construction, real estate trends, and engineering innovation in Nigeria.",
+  alternates: { canonical: "/blog" },
 };
 
 export const revalidate = 60;

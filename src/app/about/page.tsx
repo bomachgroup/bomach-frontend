@@ -9,8 +9,10 @@ import type { Metadata } from "next";
 import type { AboutData } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "About - Bomach Group",
-  description: "Learn about Bomach Group, our team, and our mission.",
+  title: "About Us",
+  description:
+    "Discover Bomach Group — a leading Nigerian consortium delivering excellence in construction, engineering, real estate, and digital innovation.",
+  alternates: { canonical: "/about" },
 };
 
 export const revalidate = 60;

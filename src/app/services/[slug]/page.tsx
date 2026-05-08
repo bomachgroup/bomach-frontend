@@ -24,9 +24,20 @@ export async function generateMetadata({
   try {
     const { slug } = await params;
     const service = await getServiceBySlug(slug);
-    return { title: `${service.name} - Bomach Group` };
+    const description = `Learn more about Bomach Group's ${service.name} service — what we offer, how we work, and how to get started.`;
+    return {
+      title: service.name,
+      description,
+      alternates: { canonical: `/services/${slug}` },
+      openGraph: {
+        title: `${service.name} | Bomach Group`,
+        description,
+        url: `/services/${slug}`,
+        type: "article",
+      },
+    };
   } catch {
-    return { title: "Service - Bomach Group" };
+    return { title: "Service" };
   }
 }
 

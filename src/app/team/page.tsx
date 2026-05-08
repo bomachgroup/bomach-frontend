@@ -8,8 +8,10 @@ import type { Metadata } from "next";
 import type { Employee } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Team - Bomach Group",
-  description: "Meet the Bomach Group team.",
+  title: "Our Team",
+  description:
+    "Meet the Bomach Group team — the experienced professionals leading our work in construction, engineering, and real estate across Nigeria.",
+  alternates: { canonical: "/team" },
 };
 
 export const revalidate = 60;

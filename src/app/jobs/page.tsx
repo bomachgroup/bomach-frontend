@@ -15,8 +15,10 @@ import type { Metadata } from "next";
 import type { Job } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Jobs - Bomach Group",
-  description: "View open job positions at Bomach Group.",
+  title: "Careers & Open Positions",
+  description:
+    "Join Bomach Group. Explore open roles in construction, engineering, real estate, and operations across Nigeria.",
+  alternates: { canonical: "/jobs" },
 };
 
 export const revalidate = 60;
