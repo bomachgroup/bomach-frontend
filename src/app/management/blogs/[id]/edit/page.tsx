@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { getBlogById, updateBlog, uploadFile } from "@/lib/api";
+import { compressImageForUpload } from "@/lib/imageCompression";
 import { useAuth } from "@/contexts/AuthContext";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import type { Blog } from "@/lib/types";
@@ -130,7 +131,8 @@ export default function AdminBlogEditPage() {
 
       // Upload image if selected
       if (selectedImage) {
-        const uploadResult = await uploadFile(selectedImage, accessToken);
+        const uploadImage = await compressImageForUpload(selectedImage);
+        const uploadResult = await uploadFile(uploadImage, accessToken);
         imageUrl = uploadResult.url;
       }
 

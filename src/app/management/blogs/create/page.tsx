@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBlog, uploadFile } from "@/lib/api";
+import { compressImageForUpload } from "@/lib/imageCompression";
 import { useAuth } from "@/contexts/AuthContext";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 
@@ -93,7 +94,8 @@ export default function AdminBlogCreatePage() {
       console.log("Selected image file:", selectedImage);
       // Upload image if selected
       if (selectedImage) {
-        const uploadResult = await uploadFile(selectedImage, accessToken);
+        const uploadImage = await compressImageForUpload(selectedImage);
+        const uploadResult = await uploadFile(uploadImage, accessToken);
         imageUrl = uploadResult.url;
       }
 
