@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { subscribeEmail } from "@/lib/api";
+import { usePathname } from "next/navigation";
+import { submitContact, subscribeEmail } from "@/lib/api";
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import {
   MapPin,
@@ -15,6 +16,7 @@ import {
   MessageCircle,
   ArrowRight,
   Send,
+  Loader2,
 } from "lucide-react";
 
 const quickLinks = [
@@ -35,19 +37,68 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+  const isProperties = pathname.startsWith("/properties");
+
+  // Newsletter state
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [msg, setMsg] = useState("");
+
+  // Contact form state
+  const [contactStatus, setContactStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [contactError, setContactError] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
 
   async function handleSubscribe(e: React.FormEvent) {
     e.preventDefault();
     try {
       await subscribeEmail(email);
-      setMessage("Subscribed successfully!");
+      setMsg("Subscribed successfully!");
       setEmail("");
     } catch {
-      setMessage("Email is invalid or already subscribed.");
+      setMsg("Email is invalid or already subscribed.");
     }
-    setTimeout(() => setMessage(""), 4000);
+    setTimeout(() => setMsg(""), 4000);
+  }
+
+  function updateField(field: string, value: string) {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleContactSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setContactStatus("loading");
+
+    const waText = encodeURIComponent(
+      `Hello Bomach Group!\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\n\n${formData.message}`
+    );
+    const waUrl = `https://wa.me/2349018000118?text=${waText}`;
+
+    // Open WhatsApp immediately (within user gesture) to avoid popup blocking
+    window.open(waUrl, "_blank");
+
+    // Then submit to API in background
+    try {
+      await submitContact({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        message: formData.message,
+      });
+    } catch (err) {
+      setContactStatus("error");
+      setContactError(err instanceof Error ? err.message : "Submission failed.");
+      setTimeout(() => setContactStatus("idle"), 8000);
+      return;
+    }
+
+    setFormData({ name: "", email: "", phone: "", message: "" });
+    setContactStatus("idle");
   }
 
   return (
@@ -65,52 +116,137 @@ export default function Footer() {
         </svg>
       </a>
 
-      {/* Newsletter Section */}
-      <div className="border-b border-white/10 px-4 py-16">
-        <div className="mx-auto max-w-7xl">
-          <AnimatedSection direction="up">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm md:p-12">
-              <div className="grid items-center gap-8 lg:grid-cols-2">
-                <div>
-                  <h3 className="font-display text-2xl font-bold text-white md:text-3xl">
-                    Newsletter
-                  </h3>
-                  <p className="mt-2 text-secondary-400">
-                    Subscribe to get the latest updates, news, and exclusive offers
-                    delivered directly to your inbox.
-                  </p>
+      {isProperties ? (
+        /* Contact Form for Properties Page */
+        <div className="border-b border-white/10 px-4 py-16">
+          <div className="mx-auto max-w-7xl">
+            <AnimatedSection direction="up">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm md:p-12">
+                <div className="grid items-center gap-8 lg:grid-cols-2">
+                  <div>
+                    <h3 className="font-display text-2xl font-bold text-white md:text-3xl">
+                      Have a Question?
+                    </h3>
+                    <p className="mt-2 text-secondary-400">
+                      Send us a message and we'll get back to you shortly. Or
+                      reach us directly on WhatsApp.
+                    </p>
+                  </div>
+                  <form onSubmit={handleContactSubmit} className="space-y-4">
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Full Name"
+                      value={formData.name}
+                      onChange={(e) => updateField("name", e.target.value)}
+                      required
+                      className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white placeholder:text-white/50 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="Email Address"
+                        value={formData.email}
+                        onChange={(e) => updateField("email", e.target.value)}
+                        required
+                        className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white placeholder:text-white/50 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      />
+                      <input
+                        type="tel"
+                        name="phone"
+                        placeholder="Phone Number"
+                        value={formData.phone}
+                        onChange={(e) => updateField("phone", e.target.value)}
+                        required
+                        className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white placeholder:text-white/50 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      />
+                    </div>
+                    <textarea
+                      name="message"
+                      placeholder="Your Message"
+                      rows={4}
+                      value={formData.message}
+                      onChange={(e) => updateField("message", e.target.value)}
+                      required
+                      className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white placeholder:text-white/50 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={contactStatus === "loading"}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-700 disabled:opacity-60"
+                    >
+                      {contactStatus === "loading" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          Send Message
+                        </>
+                      )}
+                    </button>
+                    {contactStatus === "error" && (
+                      <p className="mt-2 text-sm font-medium text-red-400">
+                        {contactError}
+                      </p>
+                    )}
+                  </form>
                 </div>
-                <form onSubmit={handleSubscribe} className="flex flex-col gap-3 sm:flex-row">
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Enter your email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="flex-1 rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white placeholder:text-white/50 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                  />
-                  <button
-                    type="submit"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-700"
-                  >
-                    Subscribe
-                    <Send className="h-4 w-4" />
-                  </button>
-                </form>
               </div>
-              {message && (
-                <p
-                  className={`mt-4 text-sm font-medium ${message.includes("success") ? "text-green-400" : "text-red-400"
-                    }`}
-                >
-                  {message}
-                </p>
-              )}
-            </div>
-          </AnimatedSection>
+            </AnimatedSection>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Newsletter for all other pages */
+        <div className="border-b border-white/10 px-4 py-16">
+          <div className="mx-auto max-w-7xl">
+            <AnimatedSection direction="up">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm md:p-12">
+                <div className="grid items-center gap-8 lg:grid-cols-2">
+                  <div>
+                    <h3 className="font-display text-2xl font-bold text-white md:text-3xl">
+                      Newsletter
+                    </h3>
+                    <p className="mt-2 text-secondary-400">
+                      Subscribe to get the latest updates, news, and exclusive offers
+                      delivered directly to your inbox.
+                    </p>
+                  </div>
+                  <form onSubmit={handleSubscribe} className="flex flex-col gap-3 sm:flex-row">
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="Enter your email address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="flex-1 rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-white placeholder:text-white/50 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    />
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-700"
+                    >
+                      Subscribe
+                      <Send className="h-4 w-4" />
+                    </button>
+                  </form>
+                </div>
+                {msg && (
+                  <p
+                    className={`mt-4 text-sm font-medium ${msg.includes("success") ? "text-green-400" : "text-red-400"
+                      }`}
+                  >
+                    {msg}
+                  </p>
+                )}
+              </div>
+            </AnimatedSection>
+          </div>
+        </div>
+      )}
 
       {/* Main Footer Columns */}
       <div className="px-4 py-16">
