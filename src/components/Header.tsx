@@ -110,7 +110,7 @@ export default function Header() {
                     <Linkedin className="w-4 h-4" />
                   </a>
                   <a
-                    href="#"
+                    href="https://wa.me/2348036656173"
                     target="_blank"
                     rel="noreferrer"
                     className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"

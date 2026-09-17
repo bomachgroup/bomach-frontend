@@ -31,6 +31,8 @@ import {
   employees,
   aboutData,
   products as staticProducts,
+  blogs as staticBlogs,
+  blogDetails as staticBlogDetails,
 } from "./data";
 
 // Server-side uses the full backend URL; client-side uses the Next.js API route proxy to avoid CORS
@@ -97,14 +99,30 @@ function extractErrorMessage(
 }
 
 /**
- * Fix double-nested Cloudinary URLs caused by corrupted DB entries.
+ * Sanitize and format image URLs from CloudFront, S3, Cloudinary, or relative paths.
  */
 export function sanitizeImageUrl(url: string | null | undefined): string {
   if (!url) return "/images/logo/bomach-logo-hd.png";
+
+  // Clean double-nested URLs
   const doubleIndex = url.indexOf("https://", 8);
   if (doubleIndex > 0) {
     return url.substring(doubleIndex);
   }
+
+  // If already absolute URL
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // If relative media URL, ensure it points to the backend
+  if (url.startsWith("/media/") || url.startsWith("media/")) {
+    const backendBase = process.env.NEXT_PUBLIC_API_URL
+      ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, "")
+      : "http://127.0.0.1:8000";
+    return `${backendBase}${url.startsWith("/") ? "" : "/"}${url}`;
+  }
+
   return url;
 }
 
@@ -223,13 +241,22 @@ export async function getBlogs(page = 1, size = 100): Promise<Blog[]> {
       has_next: boolean;
       has_previous: boolean;
     }>(`/properties/blogs/?page=${page}&size=${size}`);
-    return data.items.map((blog) => ({
+    if (data && data.items && data.items.length > 0) {
+      return data.items.map((blog) => ({
+        ...blog,
+        image_url: sanitizeImageUrl(blog.image_url),
+      }));
+    }
+    return staticBlogs.map((blog) => ({
       ...blog,
       image_url: sanitizeImageUrl(blog.image_url),
     }));
   } catch (err) {
-    console.warn("getBlogs error:", err);
-    throw err;
+    console.warn("getBlogs error, falling back to static blogs:", err);
+    return staticBlogs.map((blog) => ({
+      ...blog,
+      image_url: sanitizeImageUrl(blog.image_url),
+    }));
   }
 }
 
@@ -242,6 +269,13 @@ export async function getBlogById(id: number): Promise<Blog> {
     };
   } catch (err) {
     console.warn("getBlogById error", err);
+    const staticBlog = staticBlogs.find((b) => b.id === id);
+    if (staticBlog) {
+      return {
+        ...staticBlog,
+        image_url: sanitizeImageUrl(staticBlog.image_url),
+      };
+    }
     throw err;
   }
 }
@@ -270,13 +304,21 @@ export async function getBlogBySlug(slug: string): Promise<BlogDetail> {
   // Fallback to searching the list
   const blogs = await getBlogs(1, 100);
   const blog = blogs.find((b) => b.slug === slug);
-  if (!blog) throw new Error("Blog not found");
+  const staticDetail = staticBlogDetails[slug];
 
-  return {
-    ...blog,
-    image_url: sanitizeImageUrl(blog.image_url),
-    content: blog.content || blog.short_content || "",
-  };
+  if (blog) {
+    return {
+      ...blog,
+      image_url: sanitizeImageUrl(blog.image_url),
+      content: blog.content || staticDetail?.content || blog.short_content || "",
+    };
+  }
+
+  if (staticDetail) {
+    return staticDetail;
+  }
+
+  throw new Error("Blog not found");
 }
 
 // ── Project CRUD Operations ──

@@ -33,7 +33,7 @@ const socialLinks = [
   { icon: Facebook, href: "https://web.facebook.com/bomachgroup", label: "Facebook" },
   { icon: Twitter, href: "#", label: "Twitter" },
   { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: MessageCircle, href: "https://wa.me/2349018000118", label: "WhatsApp" },
+  { icon: MessageCircle, href: "https://wa.me/2348036656173", label: "WhatsApp" },
 ];
 
 export default function Footer() {
@@ -77,7 +77,7 @@ export default function Footer() {
     const waText = encodeURIComponent(
       `Hello Bomach Group!\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\n\n${formData.message}`
     );
-    const waUrl = `https://wa.me/2349018000118?text=${waText}`;
+    const waUrl = `https://wa.me/2348036656173?text=${waText}`;
 
     // Open WhatsApp immediately (within user gesture) to avoid popup blocking
     window.open(waUrl, "_blank");
@@ -105,7 +105,7 @@ export default function Footer() {
     <footer className="relative bg-gradient-to-b from-secondary-900 to-secondary-950">
       {/* WhatsApp floating button */}
       <a
-        href="https://wa.me/2349018000118"
+        href="https://wa.me/2348036656173"
         target="_blank"
         rel="noreferrer"
         aria-label="Chat on WhatsApp"
