@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import "leaflet/dist/leaflet.css";
 import "@/styles/globals.css";
 
 const inter = Inter({
