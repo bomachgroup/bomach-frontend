@@ -58,7 +58,17 @@ Bomach Frontend is a comprehensive web application designed to showcase the dive
    Create a `.env` file in the root directory and add the necessary variables:
    ```env
    NEXT_PUBLIC_API_URL=https://backend.bomachgroup.com/api
+   CAMPAIGN_CONTENT_SOURCE=site
    ```
+
+   For local end-to-end campaign testing against Django, use:
+   ```env
+   NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+   BACKEND_INTERNAL_URL=http://127.0.0.1:8000
+   CAMPAIGN_CONTENT_SOURCE=site
+   ```
+
+   `CAMPAIGN_CONTENT_SOURCE` accepts `site` or `backend` and defaults to `site`. In backend mode, the Fortress City page and announcement only appear when its campaign page is published and its campaign and linked lead form are active. The public site never substitutes site copy when backend mode fails.
 
 4. **Run the development server**:
    ```bash

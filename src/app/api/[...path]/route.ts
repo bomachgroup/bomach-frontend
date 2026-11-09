@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
-  process.env.BACKEND_INTERNAL_URL || "https://backend.bomachgroup.com";
+  process.env.BACKEND_INTERNAL_URL ||
+  (process.env.NODE_ENV === "development"
+    ? "http://127.0.0.1:8000"
+    : "https://backend.bomachgroup.com");
 
 // Paths (prefixes or exact) registered without a trailing slash on the backend.
 // Adding a slash would cause a 301-redirect, downgrading POST → GET (405) or 404.
@@ -58,6 +61,7 @@ export async function GET(
   try {
     const res = await fetch(target, {
       headers,
+      cache: "no-store",
     });
 
     const responseHeaders: Record<string, string> = {

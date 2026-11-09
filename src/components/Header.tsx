@@ -28,7 +28,7 @@ const NAV_ITEMS = [
       { label: "Our Team", href: "/team" },
     ],
   },
-  { label: "BALE", href: "/bale" },
+  { label: "Fortress City Offer", href: "/promotions/fortress-city" },
   { label: "Properties", href: "/properties" },
   {
     label: "Services",
