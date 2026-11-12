@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import "leaflet/dist/leaflet.css";
 import "@/styles/globals.css";
 
 const inter = Inter({
@@ -103,6 +104,7 @@ export const viewport: Viewport = {
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
+import { getCampaignContentSource } from "@/lib/campaignPage";
 
 export default function RootLayout({
   children,
@@ -118,7 +120,7 @@ export default function RootLayout({
         <OrganizationJsonLd />
         <WebSiteJsonLd />
         <AuthProvider>
-          <ConditionalLayout>{children}</ConditionalLayout>
+          <ConditionalLayout campaignContentSource={getCampaignContentSource()}>{children}</ConditionalLayout>
         </AuthProvider>
       </body>
     </html>

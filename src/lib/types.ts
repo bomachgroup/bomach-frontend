@@ -197,6 +197,75 @@ export interface PaginatedProperties {
   has_previous: boolean;
 }
 
+export interface BaleEstate {
+  estate_code: string;
+  estate_name: string;
+  estate_type: string;
+  estate_description: string;
+  country: string;
+  state: string;
+  city_town: string;
+  price_per_sqm: number | string;
+  available_plot_sizes: string;
+  amenities: string[];
+}
+
+export interface BaleDocument {
+  name: string;
+  url: string;
+}
+
+export interface BaleApproximateLocation {
+  lat: number;
+  lng: number;
+}
+
+export interface BaleEstateDetail extends BaleEstate {
+  approximate_location: BaleApproximateLocation | null;
+  documents: BaleDocument[];
+}
+
+export interface BalePropertyImage {
+  url: string | null;
+  caption: string;
+}
+
+export interface BaleProperty {
+  id: number;
+  property_name: string;
+  property_type: string;
+  property_type_display: string;
+  plot_use: string;
+  plot_use_display: string;
+  price: number | string;
+  description: string;
+  status: string;
+  plot_number: number | null;
+  plot_size: number | string | null;
+  plot_size_unit: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  total_area_residential: number | string | null;
+  total_area_commercial: number | string | null;
+  images: BalePropertyImage[];
+}
+
+export interface BalePropertyDetail extends BaleProperty {
+  building_type_residential: string | null;
+  building_type_residential_display: string | null;
+  floors_residential: number | null;
+  building_type_commercial: string | null;
+  building_type_commercial_display: string | null;
+  number_of_floors: number | null;
+  units_offices: number | null;
+  documents: BaleDocument[];
+}
+
+export interface PaginatedBaleProperties {
+  items: BaleProperty[];
+  count: number;
+}
+
 export interface TokenResponse {
   access_token: string;
   refresh_token: string;

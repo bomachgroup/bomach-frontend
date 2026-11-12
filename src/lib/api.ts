@@ -15,6 +15,10 @@ import type {
   Employee,
   AboutData,
   PaginatedProperties,
+  BaleEstate,
+  BaleEstateDetail,
+  BalePropertyDetail,
+  PaginatedBaleProperties,
   Property,
   Job,
   JobDetail,
@@ -525,6 +529,63 @@ export async function getProperties(
       has_previous: false,
     };
   }
+}
+
+// ── BALE public inventory ──
+
+export async function getBaleEstates(
+  options?: { signal?: AbortSignal },
+): Promise<BaleEstate[]> {
+  return fetchAPI<BaleEstate[]>("/v1/public/bale/estates/", options);
+}
+
+export async function getBaleEstateDetail(
+  estateCode: string,
+  options?: { signal?: AbortSignal },
+): Promise<BaleEstateDetail> {
+  const code = encodeURIComponent(estateCode);
+  return fetchAPI<BaleEstateDetail>(
+    `/v1/public/bale/estates/${code}/`,
+    options,
+  );
+}
+
+export async function getBaleEstateProperties(
+  estateCode: string,
+  options: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    propertyType?: string;
+    minSizeSqm?: string;
+    maxSizeSqm?: string;
+    signal?: AbortSignal;
+  } = {},
+): Promise<PaginatedBaleProperties> {
+  const params = new URLSearchParams();
+  params.set("limit", String(options.limit ?? 24));
+  params.set("offset", String(options.offset ?? 0));
+  if (options.search?.trim()) params.set("search", options.search.trim());
+  if (options.propertyType) params.set("property_type", options.propertyType);
+  if (options.minSizeSqm) params.set("min_size_sqm", options.minSizeSqm);
+  if (options.maxSizeSqm) params.set("max_size_sqm", options.maxSizeSqm);
+  const code = encodeURIComponent(estateCode);
+  return fetchAPI<PaginatedBaleProperties>(
+    `/v1/public/bale/estates/${code}/properties/?${params.toString()}`,
+    { signal: options.signal },
+  );
+}
+
+export async function getBalePropertyDetail(
+  estateCode: string,
+  propertyId: number,
+  options?: { signal?: AbortSignal },
+): Promise<BalePropertyDetail> {
+  const code = encodeURIComponent(estateCode);
+  return fetchAPI<BalePropertyDetail>(
+    `/v1/public/bale/estates/${code}/properties/${propertyId}/`,
+    options,
+  );
 }
 
 export async function getFeaturedProperties(
@@ -1117,5 +1178,3 @@ export async function confirmBookingRequest(
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
-
-

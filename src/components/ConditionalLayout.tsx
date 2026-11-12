@@ -5,8 +5,13 @@ import ConditionalHeader from "@/components/ConditionalHeader";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/ui/BackToTop";
 import ScrollProgress from "@/components/ui/ScrollProgress";
+import CampaignPromotionChrome from "@/components/campaigns/CampaignPromotionChrome";
+import type { CampaignContentSource } from "@/lib/campaignPage";
 
-export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
+export default function ConditionalLayout({ children, campaignContentSource }: {
+  children: React.ReactNode
+  campaignContentSource: CampaignContentSource
+}) {
   const pathname = usePathname();
   const isManagement = pathname.startsWith("/management");
 
@@ -18,6 +23,7 @@ export default function ConditionalLayout({ children }: { children: React.ReactN
   return (
     <>
       <ConditionalHeader />
+      <CampaignPromotionChrome source={campaignContentSource} />
       <main>{children}</main>
       <Footer />
       <BackToTop />

@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUp } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function BackToTop() {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const rafId = useRef<number>(0);
@@ -39,6 +41,8 @@ export default function BackToTop() {
 
   const circumference = 2 * Math.PI * 18;
   const strokeDashoffset = circumference * (1 - scrollProgress);
+
+  if (pathname.startsWith("/promotions/fortress-city")) return null;
 
   return (
     <AnimatePresence>
