@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCampaignBackendOrigin, isCampaignPublicApiPath } from "@/lib/campaignApi";
 
 const BACKEND_URL =
   process.env.BACKEND_INTERNAL_URL ||
@@ -28,12 +29,17 @@ function buildTarget(path: string[], search: string): string {
   }
   const isBaleInventory =
     path[0] === "v1" && path[1] === "public" && path[2] === "bale";
+  const isCampaignPublicApi = isCampaignPublicApiPath(path);
   const baleBackendUrl =
     process.env.BALE_BACKEND_INTERNAL_URL ||
     (process.env.NODE_ENV === "development"
       ? "http://127.0.0.1:8000"
       : BACKEND_URL);
-  const backendUrl = isBaleInventory ? baleBackendUrl : BACKEND_URL;
+  const backendUrl = isCampaignPublicApi
+    ? getCampaignBackendOrigin()
+    : isBaleInventory
+      ? baleBackendUrl
+      : BACKEND_URL;
 
   return `${backendUrl}/api/${targetPath}${search}`;
 }

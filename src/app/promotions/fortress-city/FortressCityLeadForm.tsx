@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { PublicLeadForm, PublicLeadQuestion } from "@/lib/campaignPage";
+import { submitContact } from "@/lib/api";
 
 type Answers = Record<string, string | boolean | string[]>;
 
@@ -134,6 +135,9 @@ export default function FortressCityLeadForm({
   const contactQuestion = questions.find((question) => question.key === CONTACT_QUESTION);
   const consentQuestion = questions.find((question) => question.key === CONSENT_QUESTION);
   const interestQuestions = questions.filter((question) => question.key !== CONTACT_QUESTION && question.key !== CONSENT_QUESTION);
+  const hasCampaignForm = Boolean(form?.public_key);
+  const stepLabels = hasCampaignForm ? STEP_LABELS : ["Contact", "Review"];
+  const reviewStep = stepLabels.length - 1;
   const [step, setStep] = useState(0);
   const [fields, setFields] = useState({ full_name: "", phone: "", email: "", location: "" });
   const [answers, setAnswers] = useState<Answers>({});
@@ -149,8 +153,6 @@ export default function FortressCityLeadForm({
   submittingRef.current = submitting;
 
   useEffect(() => {
-    if (!form) return;
-
     const url = new URL(window.location.href);
     if (url.searchParams.get("enquire") === "1" || url.searchParams.get("lead") === "1" || url.hash === "#enquire") {
       setIsOpen(true);
@@ -169,7 +171,7 @@ export default function FortressCityLeadForm({
 
     document.addEventListener("click", handleEnquiryLink, true);
     return () => document.removeEventListener("click", handleEnquiryLink, true);
-  }, [form]);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -260,6 +262,7 @@ export default function FortressCityLeadForm({
     if (step === 0) {
       if (!fields.full_name.trim()) errors.full_name = "Enter your full name.";
       if (!fields.phone.trim()) errors.phone = "Enter a phone or WhatsApp number.";
+      if (!hasCampaignForm && !fields.email.trim()) errors.email = "Enter your email address.";
       if (fields.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim())) {
         errors.email = "Enter a valid email address.";
       }
@@ -267,15 +270,18 @@ export default function FortressCityLeadForm({
       if (contactQuestion?.required && valueIsMissing(answers[contactQuestion.key])) {
         errors[contactQuestion.key] = "Choose how you would like us to contact you.";
       }
+      if (!hasCampaignForm && answers[CONSENT_QUESTION] !== true) {
+        errors[CONSENT_QUESTION] = "Please agree that Bomach Group may contact you about this enquiry.";
+      }
     }
-    if (step === 1) {
+    if (hasCampaignForm && step === 1) {
       for (const question of interestQuestions) {
         if (question.required && valueIsMissing(answers[question.key])) {
           errors[question.key] = "Please answer this question.";
         }
       }
     }
-    if (step === 2 && consentQuestion?.required && answers[consentQuestion.key] !== true) {
+    if (step === reviewStep && consentQuestion?.required && answers[consentQuestion.key] !== true) {
       errors[consentQuestion.key] = "Please confirm that we may contact you about this enquiry.";
     }
     setFieldErrors(errors);
@@ -288,7 +294,7 @@ export default function FortressCityLeadForm({
   }
 
   function continueStep() {
-    if (validateStep()) setStep((current) => Math.min(2, current + 1));
+    if (validateStep()) setStep((current) => Math.min(reviewStep, current + 1));
   }
 
   function previousStep() {
@@ -306,38 +312,48 @@ export default function FortressCityLeadForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!validateStep() || !form?.public_key) return;
+    if (!validateStep()) return;
     setSubmitting(true);
     setFormError("");
     try {
-      const response = await fetch(`/api/v1/public/lead-forms/${encodeURIComponent(form.public_key)}/submissions`, {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        credentials: "same-origin",
-        cache: "no-store",
-        body: JSON.stringify({
-          ...fields,
-          full_name: fields.full_name.trim(),
-          phone: fields.phone.trim(),
-          email: fields.email.trim(),
-          location: fields.location.trim(),
-          answers,
-        }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const knownFields = new Set(["full_name", "phone", "email", "location", ...questions.map((question) => question.key)]);
-        const questionLabels = new Map(questions.map((question) => [question.key, question.label]));
-        const result = apiErrors(body, knownFields, questionLabels);
-        setFieldErrors(result.errors);
-        if (Object.keys(result.errors).length) {
-          const firstField = Object.keys(result.errors)[0];
-          const targetStep = firstField === "contact_consent" ? 2 : interestQuestions.some((question) => question.key === firstField) ? 1 : 0;
-          setStep(targetStep);
-          window.requestAnimationFrame(() => document.getElementById(`enquiry-${firstField}`)?.focus());
+      if (form?.public_key) {
+        const response = await fetch(`/api/v1/public/lead-forms/${encodeURIComponent(form.public_key)}/submissions`, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify({
+            ...fields,
+            full_name: fields.full_name.trim(),
+            phone: fields.phone.trim(),
+            email: fields.email.trim(),
+            location: fields.location.trim(),
+            answers,
+          }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const knownFields = new Set(["full_name", "phone", "email", "location", ...questions.map((question) => question.key)]);
+          const questionLabels = new Map(questions.map((question) => [question.key, question.label]));
+          const result = apiErrors(body, knownFields, questionLabels);
+          setFieldErrors(result.errors);
+          if (Object.keys(result.errors).length) {
+            const firstField = Object.keys(result.errors)[0];
+            const targetStep = firstField === "contact_consent" ? reviewStep : interestQuestions.some((question) => question.key === firstField) ? 1 : 0;
+            setStep(targetStep);
+            window.requestAnimationFrame(() => document.getElementById(`enquiry-${firstField}`)?.focus());
+          }
+          setFormError(result.message);
+          return;
         }
-        setFormError(result.message);
-        return;
+      } else {
+        await submitContact({
+          name: fields.full_name.trim(),
+          email: fields.email.trim(),
+          phone: fields.phone.trim(),
+          location: fields.location.trim(),
+          message: `Fortress City Estate enquiry (${location}). I am interested in the ${plotSize} sqm plot advertised at ${promotionPrice}. I agree that Bomach Group may contact me about this enquiry.`,
+        });
       }
       setSubmitted(true);
     } catch (error) {
@@ -347,7 +363,7 @@ export default function FortressCityLeadForm({
     }
   }
 
-  if (!form || !isOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f4f5f7] text-slate-950" role="presentation">
@@ -363,7 +379,7 @@ export default function FortressCityLeadForm({
           <div className="flex items-center gap-3 sm:gap-5">
             <div className="hidden text-right sm:block">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Your progress</p>
-              <p className="mt-0.5 text-xs font-semibold text-slate-700">{submitted ? "Complete" : `Step ${step + 1} of 3`}</p>
+              <p className="mt-0.5 text-xs font-semibold text-slate-700">{submitted ? "Complete" : `Step ${step + 1} of ${stepLabels.length}`}</p>
             </div>
             <button type="button" onClick={closeDialog} disabled={submitting} aria-label="Close enquiry form" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-slate-400 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/15 disabled:opacity-50 sm:h-11 sm:w-11"><X size={20} /></button>
           </div>
@@ -398,7 +414,7 @@ export default function FortressCityLeadForm({
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800"><Check size={28} strokeWidth={2.5} /></div>
                   <p className="mt-7 text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">Enquiry received</p>
                   <h1 id="fortress-enquiry-title" className="mt-2 font-display text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">Thank you, {fields.full_name}.</h1>
-                  <p id="fortress-enquiry-description" className="mt-4 max-w-xl text-base leading-relaxed text-slate-600">Our team will follow up using your preferred contact method and help you with the next steps.</p>
+                  <p id="fortress-enquiry-description" className="mt-4 max-w-xl text-base leading-relaxed text-slate-600">{hasCampaignForm ? "Our team will follow up using your preferred contact method and help you with the next steps." : "Our team will follow up using the contact details you provided."}</p>
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                     <a href={`tel:${contactPhone.replace(/[^+\d]/g, "")}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#101a35] px-5 text-sm font-bold text-white transition hover:bg-slate-800"><Phone size={16} />Call our team</a>
                     <a href={contactWhatsapp} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-100"><MessageCircle size={17} />Continue on WhatsApp</a>
@@ -414,10 +430,10 @@ export default function FortressCityLeadForm({
                         <h1 id="fortress-enquiry-title" className="mt-2 max-w-xl font-display text-2xl font-bold leading-tight text-slate-950 sm:text-3xl lg:text-4xl">Tell us about your plans.</h1>
                         <p id="fortress-enquiry-description" className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">A few details help our team give you a relevant response about this offer.</p>
                       </div>
-                      <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[10px] font-bold text-slate-600 sm:px-3 sm:text-xs">0{step + 1} / 03</span>
+                      <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[10px] font-bold text-slate-600 sm:px-3 sm:text-xs">0{step + 1} / 0{stepLabels.length}</span>
                     </div>
-                    <div className="mt-5 grid grid-cols-3 gap-3" role="group" aria-label={`Step ${step + 1} of 3: ${STEP_LABELS[step]}`}>
-                      {STEP_LABELS.map((label, index) => (
+                    <div className={`mt-5 grid ${hasCampaignForm ? "grid-cols-3" : "grid-cols-2"} gap-3`} role="group" aria-label={`Step ${step + 1} of ${stepLabels.length}: ${stepLabels[step]}`}>
+                      {stepLabels.map((label, index) => (
                         <div key={label} aria-current={index === step ? "step" : undefined}>
                           <span aria-hidden="true" className={`block h-1.5 rounded-full transition-colors ${index <= step ? "bg-red-700" : "bg-slate-200"}`} />
                           <span className={`mt-1.5 block text-[10px] font-semibold sm:text-xs ${index === step ? "text-red-800" : index < step ? "text-slate-700" : "text-slate-400"}`}>{label}</span>
@@ -435,26 +451,35 @@ export default function FortressCityLeadForm({
                         <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-5">
                           <TextInput id="enquiry-full_name" label="Full name" autoComplete="name" required value={fields.full_name} error={fieldErrors.full_name} onChange={(value) => setField("full_name", value)} initialFocus />
                           <TextInput id="enquiry-phone" label="Phone / WhatsApp number" type="tel" autoComplete="tel" required value={fields.phone} error={fieldErrors.phone} onChange={(value) => setField("phone", value)} />
-                          <TextInput id="enquiry-email" label="Email address" type="email" autoComplete="email" value={fields.email} error={fieldErrors.email} onChange={(value) => setField("email", value)} />
+                          <TextInput id="enquiry-email" label="Email address" type="email" autoComplete="email" required={!hasCampaignForm} value={fields.email} error={fieldErrors.email} onChange={(value) => setField("email", value)} />
                           <TextInput id="enquiry-location" label="Current city / location" autoComplete="address-level2" required value={fields.location} error={fieldErrors.location} onChange={(value) => setField("location", value)} />
                         </div>
                         {contactQuestion && <QuestionField id={`enquiry-${contactQuestion.key}`} question={contactQuestion} value={answers[contactQuestion.key]} error={fieldErrors[contactQuestion.key]} portalContainer={dialogRef.current} onChange={(value) => setAnswer(contactQuestion.key, value)} />}
+                        {!hasCampaignForm && <div className="space-y-1.5">
+                          <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <div className="flex items-start gap-3">
+                              <input id={`enquiry-${CONSENT_QUESTION}`} type="checkbox" required checked={answers[CONSENT_QUESTION] === true} aria-invalid={fieldErrors[CONSENT_QUESTION] ? "true" : undefined} aria-describedby={fieldErrors[CONSENT_QUESTION] ? `enquiry-${CONSENT_QUESTION}-error` : undefined} onChange={(event) => setAnswer(CONSENT_QUESTION, event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-red-700" />
+                              <label htmlFor={`enquiry-${CONSENT_QUESTION}`} className="cursor-pointer text-sm leading-relaxed text-slate-700">I agree that Bomach Group may contact me about this property enquiry.<span className="text-red-700"> *</span></label>
+                            </div>
+                          </div>
+                          {fieldErrors[CONSENT_QUESTION] && <p id={`enquiry-${CONSENT_QUESTION}-error`} className="text-sm leading-relaxed text-red-700" role="status">{fieldErrors[CONSENT_QUESTION]}</p>}
+                        </div>}
                       </>
                     )}
 
-                    {step === 1 && <div className="space-y-5">
+                    {hasCampaignForm && step === 1 && <div className="space-y-5">
                       <div><h2 className="font-display text-lg font-bold text-slate-950 sm:text-xl">Your property plans</h2><p className="mt-1 text-sm leading-relaxed text-slate-600">Choose the answers that best describe where you are today.</p></div>
                       {interestQuestions.map((question) => <QuestionField key={question.key} id={`enquiry-${question.key}`} question={question} value={answers[question.key]} error={fieldErrors[question.key]} portalContainer={dialogRef.current} onChange={(value) => setAnswer(question.key, value)} />)}
                     </div>}
 
-                    {step === 2 && <div className="space-y-4">
+                    {step === reviewStep && <div className="space-y-4">
                       <div className="rounded-2xl bg-gradient-to-br from-[#101a35] to-[#1b2b52] p-4 text-white sm:p-5">
                         <div className="flex items-start gap-3">
                           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-emerald-200"><BadgeCheck size={21} /></span>
                           <div>
                             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-200">Final check</p>
                             <h2 className="mt-1 font-display text-lg font-bold sm:text-xl">Review your enquiry</h2>
-                            <p className="mt-1 text-sm leading-relaxed text-slate-300">Check your details and property choices before sending them to our team.</p>
+                            <p className="mt-1 text-sm leading-relaxed text-slate-300">Check your details{hasCampaignForm ? " and property choices" : ""} before sending them to our team.</p>
                           </div>
                         </div>
                       </div>
@@ -476,7 +501,7 @@ export default function FortressCityLeadForm({
                         </dl>
                       </section>
 
-                      <section aria-labelledby="review-plans-heading" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                      {hasCampaignForm ? <section aria-labelledby="review-plans-heading" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                         <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-5">
                           <div className="flex min-w-0 items-center gap-3">
                             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-800"><ClipboardList size={19} /></span>
@@ -487,7 +512,18 @@ export default function FortressCityLeadForm({
                         <dl className="divide-y divide-slate-100 border-t border-slate-100 px-4 sm:px-5">
                           {interestQuestions.map((question, index) => <ReviewAnswer key={question.key} question={question} value={answers[question.key]} index={index} />)}
                         </dl>
-                      </section>
+                      </section> : <section aria-labelledby="review-offer-heading" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                        <div className="flex items-center gap-3 px-4 py-4 sm:px-5">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-800"><ClipboardList size={19} /></span>
+                          <div className="min-w-0"><h3 id="review-offer-heading" className="font-semibold text-slate-950">Fortress City offer</h3><p className="text-xs text-slate-500">Promotion details you are enquiring about</p></div>
+                        </div>
+                        <dl className="grid grid-cols-1 gap-2 border-t border-slate-100 bg-slate-50/70 p-3 sm:grid-cols-2 sm:p-4">
+                          <ReviewDetail icon={MapPin} label="Location" value={location} />
+                          <ReviewDetail icon={Ruler} label="Plot size" value={`${plotSize} sqm`} />
+                          <ReviewDetail icon={Gift} label="Promotional price" value={promotionPrice} />
+                          <ReviewDetail icon={ShieldCheck} label="Contact permission" value={answers[CONSENT_QUESTION] === true ? "Agreed" : "Not agreed"} />
+                        </dl>
+                      </section>}
 
                       {consentQuestion && <section aria-label="Contact permission" className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3 sm:p-4">
                         <div className="mb-3 flex items-center gap-3 px-1">
@@ -503,7 +539,7 @@ export default function FortressCityLeadForm({
 
                   <div data-enquiry-action-bar="" className="fixed inset-x-0 bottom-0 z-30 flex flex-col-reverse items-stretch gap-2 border-t border-slate-200 bg-white px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_32px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-8 sm:py-4 lg:sticky lg:bottom-0 lg:z-10 lg:rounded-b-[1.75rem] lg:shadow-none">
                     {step > 0 ? <button type="button" onClick={previousStep} disabled={submitting} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 disabled:opacity-50"><ArrowLeft size={16} /> Back</button> : <span className="text-[11px] leading-relaxed text-slate-500 sm:text-xs">Your details stay private and are used to respond to this enquiry.</span>}
-                    {step < 2 ? (
+                    {step < reviewStep ? (
                       <button type="button" onClick={continueStep} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-red-700 px-5 text-sm font-bold text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/20">Continue <ArrowRight size={16} /></button>
                     ) : (
                       <button type="submit" disabled={submitting} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-red-700 px-5 text-sm font-bold text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/20 disabled:cursor-wait disabled:opacity-60">{submitting ? <><LoaderCircle size={16} className="animate-spin" /> Sending...</> : <>Send enquiry <ArrowRight size={16} /></>}</button>

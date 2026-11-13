@@ -1,3 +1,5 @@
+import { getCampaignBackendApiBase } from "@/lib/campaignApi";
+
 export type CampaignContentSource = 'site' | 'backend'
 
 export type PublicLeadQuestion = {
@@ -93,18 +95,8 @@ export function getCampaignContentSource(): CampaignContentSource {
   return process.env.CAMPAIGN_CONTENT_SOURCE === 'backend' ? 'backend' : 'site'
 }
 
-function backendApiBase() {
-  const configured = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL
-  const fallback = process.env.NODE_ENV === 'development'
-    ? 'http://127.0.0.1:8000'
-    : 'https://backend.bomachgroup.com'
-  const value = configured && /^https?:\/\//i.test(configured) ? configured : fallback
-  const origin = value.replace(/\/api(?:\/v1)?\/?$/i, '').replace(/\/$/, '')
-  return `${origin}/api/v1`
-}
-
 async function fetchBackend<T>(path: string): Promise<T> {
-  const response = await fetch(`${backendApiBase()}${path}`, {
+  const response = await fetch(`${getCampaignBackendApiBase()}${path}`, {
     cache: 'no-store',
     headers: { Accept: 'application/json' },
   })
