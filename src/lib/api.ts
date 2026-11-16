@@ -105,18 +105,32 @@ function extractErrorMessage(
 /**
  * Sanitize and format image URLs from CloudFront, S3, Cloudinary, or relative paths.
  */
+const DEAD_MEDIA_HOSTS = [
+  "d1yzddjh14f4tu.cloudfront.net",
+];
+
 export function sanitizeImageUrl(url: string | null | undefined): string {
   if (!url) return "/images/logo/bomach-logo-hd.png";
 
   // Clean double-nested URLs
   const doubleIndex = url.indexOf("https://", 8);
   if (doubleIndex > 0) {
-    return url.substring(doubleIndex);
+    url = url.substring(doubleIndex);
   }
 
-  // If already absolute URL
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
+  // Retired/broken CDN hostnames still stored in older media records.
+  // Fall back to the site logo instead of letting the browser spam
+  // net::ERR_NAME_NOT_RESOLVED for every property/blog/project image.
+  try {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      const host = new URL(url).hostname.toLowerCase();
+      if (DEAD_MEDIA_HOSTS.includes(host)) {
+        return "/images/logo/bomach-logo-hd.png";
+      }
+      return url;
+    }
+  } catch {
+    return "/images/logo/bomach-logo-hd.png";
   }
 
   // If relative media URL, ensure it points to the backend
