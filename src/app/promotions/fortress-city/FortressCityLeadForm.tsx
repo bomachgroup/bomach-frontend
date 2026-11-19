@@ -156,7 +156,6 @@ export default function FortressCityLeadForm({
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const closeDialogRef = useRef<() => void>(() => {});
   const submittingRef = useRef(false);
-  submittingRef.current = submitting;
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -323,7 +322,9 @@ export default function FortressCityLeadForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current) return;
     if (!validateStep()) return;
+    submittingRef.current = true;
     setSubmitting(true);
     setFormError("");
     try {
@@ -368,8 +369,14 @@ export default function FortressCityLeadForm({
       }
       setSubmitted(true);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "We could not submit your enquiry. Please try again.");
+      const message = error instanceof Error ? error.message.trim() : "";
+      setFormError(
+        message && message !== "Request failed" && message !== "Failed to fetch"
+          ? message
+          : "We could not submit your enquiry right now. Please try again.",
+      );
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
@@ -419,7 +426,7 @@ export default function FortressCityLeadForm({
               <p className="flex items-center gap-2 text-xs leading-relaxed text-slate-300"><ShieldCheck size={16} className="shrink-0 text-emerald-300" />Your information is used only to respond to your property enquiry.</p>
             </aside>
 
-            <section className="flex min-w-0 items-center justify-center py-1 sm:py-2">
+            <section data-enquiry-form-layout="" className="flex min-w-0 items-center justify-center py-1 sm:py-2">
               {submitted ? (
                 <div className="w-full max-w-2xl rounded-[1.75rem] border border-emerald-200 bg-white p-6 shadow-xl shadow-slate-950/5 sm:p-10" role="status" aria-live="polite">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800"><Check size={28} strokeWidth={2.5} /></div>
@@ -548,12 +555,12 @@ export default function FortressCityLeadForm({
                     {formError && <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-relaxed text-red-800" role="alert">{formError}</p>}
                   </div>
 
-                  <div data-enquiry-action-bar="" className="fixed inset-x-0 bottom-0 z-30 flex flex-col-reverse items-stretch gap-2 border-t border-slate-200 bg-white px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_32px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-8 sm:py-4 lg:sticky lg:bottom-0 lg:z-10 lg:rounded-b-[1.75rem] lg:shadow-none">
-                    {step > 0 ? <button type="button" onClick={previousStep} disabled={submitting} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 disabled:opacity-50"><ArrowLeft size={16} /> Back</button> : <span className="text-[11px] leading-relaxed text-slate-500 sm:text-xs">Your details stay private and are used to respond to this enquiry.</span>}
+                  <div data-enquiry-action-bar="" className={`fixed inset-x-0 bottom-0 z-30 flex ${step > 0 ? "flex-row items-center justify-between gap-2 px-3 sm:px-8" : "flex-col-reverse items-stretch gap-2 px-5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-8"} border-t border-slate-200 bg-white py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_32px_rgba(15,23,42,0.08)] sm:py-4 lg:sticky lg:bottom-0 lg:z-10 lg:rounded-b-[1.75rem] lg:shadow-none`}>
+                    {step > 0 ? <button type="button" onClick={previousStep} disabled={submitting} className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 disabled:opacity-50 sm:px-4"><ArrowLeft size={16} /> Back</button> : <span className="text-[11px] leading-relaxed text-slate-500 sm:text-xs">Your details stay private and are used to respond to this enquiry.</span>}
                     {step < reviewStep ? (
-                      <button type="button" onClick={continueStep} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-red-700 px-5 text-sm font-bold text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/20">Continue <ArrowRight size={16} /></button>
+                      <button key="continue-step" type="button" onClick={continueStep} className={`inline-flex min-h-11 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-red-700 text-sm font-bold text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/20 ${step > 0 ? "flex-1 px-2 sm:px-5" : "px-5"}`}>Continue <ArrowRight size={16} /></button>
                     ) : (
-                      <button type="submit" disabled={submitting} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-red-700 px-5 text-sm font-bold text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/20 disabled:cursor-wait disabled:opacity-60">{submitting ? <><LoaderCircle size={16} className="animate-spin" /> Sending...</> : <>Send enquiry <ArrowRight size={16} /></>}</button>
+                      <button key="submit-enquiry" type="submit" aria-label={submitting ? "Sending enquiry" : "Send enquiry"} disabled={submitting} className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-red-700 px-2 text-sm font-bold text-white transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/20 disabled:cursor-wait disabled:opacity-60 sm:px-5">{submitting ? <><LoaderCircle size={16} className="animate-spin" /><span className="min-[360px]:hidden">Sending</span><span className="hidden min-[360px]:inline">Sending...</span></> : <><span className="min-[360px]:hidden">Send</span><span className="hidden min-[360px]:inline">Send enquiry</span><ArrowRight size={16} /></>}</button>
                     )}
                   </div>
                 </form>
@@ -601,7 +608,7 @@ function QuestionField({ id, question, value, error, portalContainer, onChange }
       <div className="space-y-1.5">
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-start gap-3">
-            <input id={id} type="checkbox" required={question.required} checked={value === true} aria-invalid={error ? "true" : undefined} aria-describedby={errorId} onChange={(event) => onChange(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-red-700" />
+            <input id={id} type="checkbox" aria-required={question.required || undefined} checked={value === true} aria-invalid={error ? "true" : undefined} aria-describedby={errorId} onChange={(event) => onChange(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-red-700" />
             <label htmlFor={id} className="cursor-pointer text-sm leading-relaxed text-slate-700">{question.label}{question.required && <span className="text-red-700"> *</span>}</label>
           </div>
           {question.help_text && <p className="ml-8 mt-2 text-xs leading-relaxed text-slate-500">{question.help_text}</p>}
