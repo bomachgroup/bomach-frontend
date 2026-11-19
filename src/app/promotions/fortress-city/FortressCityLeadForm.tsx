@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -118,6 +119,8 @@ type Props = {
   bonusText: string
   contactPhone: string
   contactWhatsapp: string
+  initialOpen?: boolean
+  closeToPromotion?: boolean
 };
 
 export default function FortressCityLeadForm({
@@ -130,7 +133,10 @@ export default function FortressCityLeadForm({
   bonusText,
   contactPhone,
   contactWhatsapp,
+  initialOpen = false,
+  closeToPromotion = false,
 }: Props) {
+  const router = useRouter();
   const questions = useMemo(() => [...(form?.questions || [])].filter((question) => question.is_active).sort((a, b) => a.sort_order - b.sort_order), [form]);
   const contactQuestion = questions.find((question) => question.key === CONTACT_QUESTION);
   const consentQuestion = questions.find((question) => question.key === CONSENT_QUESTION);
@@ -145,7 +151,7 @@ export default function FortressCityLeadForm({
   const [formError, setFormError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(initialOpen);
   const dialogRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const closeDialogRef = useRef<() => void>(() => {});
@@ -241,13 +247,18 @@ export default function FortressCityLeadForm({
 
   function closeDialog() {
     if (submitting) return;
-    setIsOpen(false);
     setFormError("");
     setFieldErrors({});
     const url = new URL(window.location.href);
     url.searchParams.delete("enquire");
     url.searchParams.delete("lead");
     if (url.hash === "#enquire") url.hash = "";
+    if (closeToPromotion) {
+      router.replace(`/promotions/fortress-city${url.search}${url.hash}`, { scroll: true });
+      return;
+    }
+
+    setIsOpen(false);
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
     window.requestAnimationFrame(() => {
       const target = returnFocusRef.current || document.querySelector<HTMLElement>('a[href="#enquire"]');

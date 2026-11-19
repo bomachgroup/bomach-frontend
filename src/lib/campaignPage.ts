@@ -97,7 +97,7 @@ export function getCampaignContentSource(): CampaignContentSource {
 
 async function fetchBackend<T>(path: string): Promise<T> {
   const response = await fetch(`${getCampaignBackendApiBase()}${path}`, {
-    cache: 'no-store',
+    next: { revalidate: 60 },
     headers: { Accept: 'application/json' },
   })
   if (!response.ok) throw new Error(`Campaign service returned HTTP ${response.status}.`)

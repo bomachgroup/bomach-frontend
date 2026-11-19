@@ -10,11 +10,11 @@ import {
   Ruler,
   Sparkles,
 } from "lucide-react";
-import FortressCityLeadForm from "./FortressCityLeadForm";
+import FortressCityEnquiryExperience from "./FortressCityEnquiryExperience";
 import FortressCityAbout from "@/components/campaigns/FortressCityAbout";
 import { loadCampaignLandingData } from "@/lib/campaignPage";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const PAGE_PATH = "/promotions/fortress-city";
 
@@ -189,17 +189,7 @@ export default async function FortressCityPromotionPage() {
         </div>
       </section>
 
-      <FortressCityLeadForm
-        form={view.leadForm}
-        location={content.location}
-        promotionPrice={price(content.promotion_price)}
-        standardPrice={price(content.standard_price)}
-        promotionLimit={content.promotion_limit}
-        plotSize={Number(content.plot_size_sqm).toLocaleString()}
-        bonusText={content.bonus_text}
-        contactPhone={content.contact_phone}
-        contactWhatsapp={whatsappHref}
-      />
+      <FortressCityEnquiryExperience view={view} />
 
       <div className="container-custom flex flex-col gap-3 py-8 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
         <p>Fortress City Estate · {content.location}</p>

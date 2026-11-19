@@ -1,5 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/promotions/fortress-city',
+          has: [{ type: 'query', key: 'enquire', value: '1' }],
+          destination: '/promotions/fortress-city/enquire',
+        },
+        {
+          source: '/promotions/fortress-city',
+          has: [{ type: 'query', key: 'lead', value: '1' }],
+          destination: '/promotions/fortress-city/enquire',
+        },
+      ],
+    };
+  },
   images: {
     remotePatterns: [
       {

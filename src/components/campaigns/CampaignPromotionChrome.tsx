@@ -96,7 +96,7 @@ export default function CampaignPromotionChrome({ source }: { source: CampaignCo
   const isCampaignPage = pathname === CAMPAIGN_PATH || pathname?.startsWith(`${CAMPAIGN_PATH}/`);
 
   useEffect(() => {
-    if (source !== "backend") return;
+    if (source !== "backend" || isCampaignPage) return;
     const controller = new AbortController();
     setLoadState({ status: "loading", content: null });
     fetch("/api/v1/public/campaign-pages/fortress-city", {
@@ -114,7 +114,7 @@ export default function CampaignPromotionChrome({ source }: { source: CampaignCo
         if (!controller.signal.aborted) setLoadState({ status: "unavailable", content: null });
       });
     return () => controller.abort();
-  }, [source]);
+  }, [isCampaignPage, source]);
 
   useEffect(() => {
     if (!loadState.content || loadState.status !== "ready") return;

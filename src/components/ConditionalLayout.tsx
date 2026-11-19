@@ -1,12 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import ConditionalHeader from "@/components/ConditionalHeader";
-import Footer from "@/components/Footer";
-import BackToTop from "@/components/ui/BackToTop";
-import ScrollProgress from "@/components/ui/ScrollProgress";
-import CampaignPromotionChrome from "@/components/campaigns/CampaignPromotionChrome";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { CampaignContentSource } from "@/lib/campaignPage";
+
+const PublicSiteChrome = dynamic(() => import("@/components/PublicSiteChrome"));
 
 export default function ConditionalLayout({ children, campaignContentSource }: {
   children: React.ReactNode
@@ -14,20 +13,34 @@ export default function ConditionalLayout({ children, campaignContentSource }: {
 }) {
   const pathname = usePathname();
   const isManagement = pathname.startsWith("/management");
+  const isFortressEnquiry = pathname === "/promotions/fortress-city/enquire";
 
-  if (isManagement) {
-    // Management pages have their own layout — no site header/footer
+  if (isManagement || isFortressEnquiry) {
+    // Management and direct campaign-enquiry pages have their own layout.
     return <>{children}</>;
   }
 
+  if (pathname === "/promotions/fortress-city") {
+    return (
+      <Suspense fallback={<PublicSiteChrome source={campaignContentSource}>{children}</PublicSiteChrome>}>
+        <FortressCityRouteShell source={campaignContentSource}>{children}</FortressCityRouteShell>
+      </Suspense>
+    );
+  }
+
+  return <PublicSiteChrome source={campaignContentSource}>{children}</PublicSiteChrome>;
+}
+
+function FortressCityRouteShell({ children, source }: {
+  children: React.ReactNode;
+  source: CampaignContentSource;
+}) {
+  const searchParams = useSearchParams();
+  const isDirectEnquiry = searchParams.get("enquire") === "1" || searchParams.get("lead") === "1";
+
+  if (isDirectEnquiry) return <>{children}</>;
+
   return (
-    <>
-      <ConditionalHeader />
-      <CampaignPromotionChrome source={campaignContentSource} />
-      <main>{children}</main>
-      <Footer />
-      <BackToTop />
-      <ScrollProgress />
-    </>
+    <PublicSiteChrome source={source}>{children}</PublicSiteChrome>
   );
 }
