@@ -41,7 +41,7 @@ const NAV_ITEMS = [
   { label: "Contact", href: "/contact" },
 ];
 
-export default function Header() {
+export default function Header({ suppressContactBar = false }: { suppressContactBar?: boolean }) {
   const [services, setServices] = useState<Service[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { scrollDirection, isAtTop } = useScrollDirection();
@@ -74,74 +74,76 @@ export default function Header() {
         transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
         {/* Top Bar */}
-        <div className="bg-secondary-950 text-white">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-10 text-sm">
-              {/* Social Links */}
-              <div className="hidden sm:flex items-center gap-4">
-                <span className="text-secondary-300 text-xs font-medium tracking-wide uppercase">
-                  Follow us
-                </span>
-                <div className="flex items-center gap-3">
+        {!suppressContactBar && (
+          <div className="bg-secondary-950 text-white">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-10 text-sm">
+                {/* Social Links */}
+                <div className="hidden sm:flex items-center gap-4">
+                  <span className="text-secondary-300 text-xs font-medium tracking-wide uppercase">
+                    Follow us
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="https://web.facebook.com/bomachgroup"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"
+                      aria-label="Facebook"
+                    >
+                      <Facebook className="w-4 h-4" />
+                    </a>
+                    <a
+                      href="#"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"
+                      aria-label="Twitter"
+                    >
+                      <Twitter className="w-4 h-4" />
+                    </a>
+                    <a
+                      href="#"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"
+                      aria-label="LinkedIn"
+                    >
+                      <Linkedin className="w-4 h-4" />
+                    </a>
+                    <a
+                      href="https://wa.me/2348036656173"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"
+                      aria-label="WhatsApp"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* Contact Info */}
+                <div className="flex items-center gap-5 ml-auto">
                   <a
-                    href="https://web.facebook.com/bomachgroup"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"
-                    aria-label="Facebook"
+                    href="tel:08036656173"
+                    className="flex items-center gap-1.5 text-secondary-300 hover:text-white transition-colors duration-200"
                   >
-                    <Facebook className="w-4 h-4" />
+                    <Phone className="w-3.5 h-3.5" />
+                    <span className="text-xs">080 3665 6173</span>
                   </a>
                   <a
-                    href="#"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"
-                    aria-label="Twitter"
+                    href="mailto:bomachgroupmanagement@gmail.com"
+                    className="hidden md:flex items-center gap-1.5 text-secondary-300 hover:text-white transition-colors duration-200"
                   >
-                    <Twitter className="w-4 h-4" />
-                  </a>
-                  <a
-                    href="#"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"
-                    aria-label="LinkedIn"
-                  >
-                    <Linkedin className="w-4 h-4" />
-                  </a>
-                  <a
-                    href="https://wa.me/2348036656173"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-secondary-300 hover:text-primary-500 transition-colors duration-200"
-                    aria-label="WhatsApp"
-                  >
-                    <MessageCircle className="w-4 h-4" />
+                    <Mail className="w-3.5 h-3.5" />
+                    <span className="text-xs">bomachgroupmanagement@gmail.com</span>
                   </a>
                 </div>
               </div>
-
-              {/* Contact Info */}
-              <div className="flex items-center gap-5 ml-auto">
-                <a
-                  href="tel:08036656173"
-                  className="flex items-center gap-1.5 text-secondary-300 hover:text-white transition-colors duration-200"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span className="text-xs">080 3665 6173</span>
-                </a>
-                <a
-                  href="mailto:bomachgroupmanagement@gmail.com"
-                  className="hidden md:flex items-center gap-1.5 text-secondary-300 hover:text-white transition-colors duration-200"
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                  <span className="text-xs">bomachgroupmanagement@gmail.com</span>
-                </a>
-              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Main Navigation Bar */}
         <div
@@ -220,7 +222,7 @@ export default function Header() {
       </motion.header>
 
       {/* Spacer for fixed header */}
-      <div className="h-[104px] lg:h-[120px]" />
+      <div className={suppressContactBar ? "h-16 lg:h-20" : "h-[104px] lg:h-[120px]"} />
 
       {/* Mobile Navigation */}
       <MobileNav

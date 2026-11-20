@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -136,7 +135,6 @@ export default function FortressCityLeadForm({
   initialOpen = false,
   closeToPromotion = false,
 }: Props) {
-  const router = useRouter();
   const questions = useMemo(() => [...(form?.questions || [])].filter((question) => question.is_active).sort((a, b) => a.sort_order - b.sort_order), [form]);
   const contactQuestion = questions.find((question) => question.key === CONTACT_QUESTION);
   const consentQuestion = questions.find((question) => question.key === CONSENT_QUESTION);
@@ -253,7 +251,7 @@ export default function FortressCityLeadForm({
     url.searchParams.delete("lead");
     if (url.hash === "#enquire") url.hash = "";
     if (closeToPromotion) {
-      router.replace(`/promotions/fortress-city${url.search}${url.hash}`, { scroll: true });
+      window.location.replace(`/promotions/fortress-city${url.search}${url.hash}`);
       return;
     }
 
@@ -399,7 +397,23 @@ export default function FortressCityLeadForm({
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Your progress</p>
               <p className="mt-0.5 text-xs font-semibold text-slate-700">{submitted ? "Complete" : `Step ${step + 1} of ${stepLabels.length}`}</p>
             </div>
-            <button type="button" onClick={closeDialog} disabled={submitting} aria-label="Close enquiry form" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-slate-400 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/15 disabled:opacity-50 sm:h-11 sm:w-11"><X size={20} /></button>
+            {closeToPromotion ? (
+              <a
+                href="/promotions/fortress-city"
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (!submitting) closeDialog();
+                }}
+                aria-label="Close enquiry form"
+                aria-disabled={submitting}
+                tabIndex={submitting ? -1 : undefined}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-slate-400 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/15 sm:h-11 sm:w-11 ${submitting ? "pointer-events-none opacity-50" : ""}`}
+              >
+                <X size={20} />
+              </a>
+            ) : (
+              <button type="button" onClick={closeDialog} disabled={submitting} aria-label="Close enquiry form" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-slate-400 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/15 disabled:opacity-50 sm:h-11 sm:w-11"><X size={20} /></button>
+            )}
           </div>
         </header>
         <div aria-hidden="true" className="h-1 shrink-0 bg-gradient-to-r from-red-700 via-amber-400 to-blue-900" />

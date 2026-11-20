@@ -10,5 +10,5 @@ export default function ConditionalHeader() {
   // Homepage gets the transparent HomeHeader
   if (pathname === "/") return <HomeHeader />;
 
-  return <Header />;
+  return <Header suppressContactBar={pathname.startsWith("/promotions/fortress-city")} />;
 }

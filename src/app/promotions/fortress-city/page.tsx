@@ -5,8 +5,6 @@ import {
   ArrowRight,
   Check,
   MapPin,
-  MessageCircle,
-  Phone,
   Ruler,
   Sparkles,
 } from "lucide-react";
@@ -58,11 +56,6 @@ function price(value: string | number) {
   return `₦${Number(value).toLocaleString("en-NG", { maximumFractionDigits: 0 })}`;
 }
 
-function whatsappUrl(number: string, message: string) {
-  const digits = number.replace(/\D/g, "");
-  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-}
-
 export default async function FortressCityPromotionPage() {
   const view = await loadCampaignLandingData();
   if (!view.content) {
@@ -79,9 +72,6 @@ export default async function FortressCityPromotionPage() {
   }
 
   const content = view.content;
-  const contactMessage = `Hello, I would like more information about ${content.headline} at Fortress City Estate, Emene.`;
-  const phoneHref = `tel:${content.contact_phone.replace(/[^+\d]/g, "")}`;
-  const whatsappHref = whatsappUrl(content.contact_whatsapp, contactMessage);
   const imageSrc = content.hero_image_url || "/images/campaigns/fortress-city-promo.jpg";
   const localImage = imageSrc.startsWith("/");
 
@@ -117,10 +107,7 @@ export default async function FortressCityPromotionPage() {
               </div>
             </div>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a href="#enquire" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-red-700 px-5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:bg-red-600">Start your enquiry <ArrowRight size={17} /></a>
-              <a href={phoneHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 px-5 text-sm font-semibold text-white transition hover:bg-white/10"><Phone size={16} /> Call {content.contact_phone}</a>
-            </div>
+            <a href="#enquire" className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-700 px-5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:bg-red-600 sm:w-auto">Start your enquiry <ArrowRight size={17} /></a>
 
             <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-300">
               <span className="inline-flex items-center gap-2"><Ruler size={16} className="text-amber-300" />{Number(content.plot_size_sqm).toLocaleString()} sqm plot</span>
@@ -149,7 +136,6 @@ export default async function FortressCityPromotionPage() {
       <section className="container-custom grid gap-10 py-20 lg:grid-cols-[0.78fr_1.22fr] lg:gap-16 lg:py-24">
         <div className="min-w-0">
           <FortressCityAbout description={content.description} />
-          <a href={whatsappHref} target="_blank" rel="noreferrer" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 transition hover:border-emerald-600 hover:text-emerald-800"><MessageCircle size={17} /> Ask us on WhatsApp</a>
         </div>
 
         {(content.proximity.length > 0 || content.features.length > 0) && (
@@ -179,10 +165,6 @@ export default async function FortressCityPromotionPage() {
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-700">Private property enquiry</p>
               <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">Tell us what you are looking for.</h2>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600">Share a few details and our team will help with the offer, payment options, and a site or virtual inspection.</p>
-              <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-slate-600">
-                <a href={phoneHref} className="inline-flex min-h-10 items-center gap-2 hover:text-red-700"><Phone size={16} />{content.contact_phone}</a>
-                <a href={whatsappHref} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 hover:text-emerald-700"><MessageCircle size={16} />WhatsApp</a>
-              </div>
             </div>
             <a href="#enquire" className="mt-6 inline-flex min-h-14 shrink-0 items-center justify-center gap-3 rounded-xl bg-red-700 px-6 text-base font-bold text-white shadow-lg shadow-red-950/15 transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-700/25 lg:mt-0">Open enquiry form <ArrowRight size={19} /></a>
           </div>

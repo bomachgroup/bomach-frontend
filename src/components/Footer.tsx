@@ -264,7 +264,7 @@ export default function Footer() {
       {/* Main Footer Columns */}
       <div className="px-4 py-16">
         <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+          <div className={`grid grid-cols-1 gap-12 ${isFortressCampaign ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
             {/* Logo + Description */}
             <div>
               <Link href="/" className="inline-block">
@@ -304,47 +304,48 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Contact Info */}
-            <div>
-              <h4 className="font-display text-lg font-bold text-white">
-                Contact Info
-              </h4>
-              <div className="mt-2 h-1 w-10 rounded-full bg-primary-600" />
-              <ul className="mt-6 space-y-5">
-                <li className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
-                  <span className="text-secondary-300">
-                    3a Isiuzo Street, Independence Layout, Enugu State, Nigeria.
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Mail className="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
-                  <a
-                    href="mailto:bomachgroupmanagement@gmail.com"
-                    className="text-secondary-300 transition-colors hover:text-primary-500"
-                  >
-                    bomachgroupmanagement@gmail.com
-                  </a>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Phone className="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
-                  <div className="flex flex-col gap-1">
+            {!isFortressCampaign && (
+              <div>
+                <h4 className="font-display text-lg font-bold text-white">
+                  Contact Info
+                </h4>
+                <div className="mt-2 h-1 w-10 rounded-full bg-primary-600" />
+                <ul className="mt-6 space-y-5">
+                  <li className="flex items-start gap-3">
+                    <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
+                    <span className="text-secondary-300">
+                      3a Isiuzo Street, Independence Layout, Enugu State, Nigeria.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Mail className="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
                     <a
-                      href="tel:09018000118"
+                      href="mailto:bomachgroupmanagement@gmail.com"
                       className="text-secondary-300 transition-colors hover:text-primary-500"
                     >
-                      090 1800 0118
+                      bomachgroupmanagement@gmail.com
                     </a>
-                    <a
-                      href="tel:08036656173"
-                      className="text-secondary-300 transition-colors hover:text-primary-500"
-                    >
-                      080 3665 6173
-                    </a>
-                  </div>
-                </li>
-              </ul>
-            </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Phone className="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
+                    <div className="flex flex-col gap-1">
+                      <a
+                        href="tel:09018000118"
+                        className="text-secondary-300 transition-colors hover:text-primary-500"
+                      >
+                        090 1800 0118
+                      </a>
+                      <a
+                        href="tel:08036656173"
+                        className="text-secondary-300 transition-colors hover:text-primary-500"
+                      >
+                        080 3665 6173
+                      </a>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -352,7 +353,7 @@ export default function Footer() {
       {/* Social Links Row */}
       <div className="border-t border-white/10 px-4 py-8">
         <div className="mx-auto flex max-w-7xl items-center justify-center gap-4">
-          {socialLinks.map((social) => (
+          {socialLinks.filter((social) => !isFortressCampaign || social.label !== "WhatsApp").map((social) => (
             <a
               key={social.label}
               href={social.href}
